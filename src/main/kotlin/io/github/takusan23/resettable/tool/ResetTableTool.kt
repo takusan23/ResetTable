@@ -1,12 +1,19 @@
 package io.github.takusan23.resettable.tool
 
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
+import net.minecraft.enchantment.EnchantmentHelper
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
 import net.minecraft.world.World
 
 /** このMODの目的となる作ったアイテムを戻すための関数がある */
 object ResetTableTool {
+
+    /** 赤色カラーコード */
+    private val COLOR_RED = 0xFF0000
+
+    /** 青色カラーコード */
+    private val COLOR_BLUE = 0x0000FF
 
     /** [verifyResultItemRecipe]のレスポンス */
     enum class VerifyResult {
@@ -18,6 +25,9 @@ object ResetTableTool {
 
         /** スタック数が足りない */
         ERROR_REQUIRE_STACK_COUNT,
+
+        /** エンチャント済みの道具はおそらくもとに戻さないだろう */
+        ERROR_ENCHANTED_ITEM,
 
         /** 戻せる */
         SUCCESS,
@@ -40,6 +50,7 @@ object ResetTableTool {
             // アイテムを確認する
             .find { it.output.item == resultItemStack.item }
         return when {
+            EnchantmentHelper.get(resultItemStack).isNotEmpty() -> VerifyResult.ERROR_ENCHANTED_ITEM
             materials == null -> VerifyResult.ERROR_NOT_FOUND_RECIPE
             materials.output!!.count > resultItemStack.count -> VerifyResult.ERROR_REQUIRE_STACK_COUNT
             else -> VerifyResult.SUCCESS
@@ -77,6 +88,22 @@ object ResetTableTool {
             val notResolveItemStack = resetItemStack.copy().apply { count = notResolveCount }
             RecipeResolveData(materialList, notResolveItemStack)
         } else null
+    }
+
+    /**
+     * [ResetTableTool.VerifyResult]からユーザー向けの説明を生成する
+     *
+     * @param result 列挙型のエラー
+     * @return 文字と色のPair。nullの場合はアイテムが入ってないときで特にユーザー向けの説明はいらないかな
+     * */
+    fun resolveUserDescription(result: VerifyResult): Pair<String, Int>? {
+        return when (result) {
+            VerifyResult.ERROR_EMPTY_ITEM_STACK -> null // これは還元スロットが空の場合なので何もしない
+            VerifyResult.ERROR_NOT_FOUND_RECIPE -> "レシピが存在しないようです" to COLOR_RED
+            VerifyResult.ERROR_REQUIRE_STACK_COUNT -> "アイテム数が足りません" to COLOR_RED
+            VerifyResult.ERROR_ENCHANTED_ITEM -> "エンチャント済みアイテムは戻せません" to COLOR_RED
+            VerifyResult.SUCCESS -> "もとに戻せます" to COLOR_BLUE
+        }
     }
 
 }

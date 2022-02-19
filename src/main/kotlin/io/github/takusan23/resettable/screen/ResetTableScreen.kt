@@ -16,9 +16,6 @@ class ResetTableScreen(private val resetTableScreenHandler: ResetTableScreenHand
     // バニラの作業台の背景画像をパク..借りる
     private val TEXTURE = Identifier("minecraft", "textures/gui/container/crafting_table.png")
 
-    private val COLOR_RED = 0xFF0000
-    private val COLOR_SKYBLUE = 0x0000FF
-
     override fun drawBackground(matrices: MatrixStack?, delta: Float, mouseX: Int, mouseY: Int) {
         RenderSystem.setShader { GameRenderer.getPositionTexShader() }
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f)
@@ -34,12 +31,7 @@ class ResetTableScreen(private val resetTableScreenHandler: ResetTableScreenHand
         // アイテムが戻せない場合はなんで戻せない理由を
         resetTableScreenHandler?.verifyResultItem()?.also { status ->
             // 文字と色を解決
-            val textColorPair = when (status) {
-                ResetTableTool.VerifyResult.ERROR_EMPTY_ITEM_STACK -> return
-                ResetTableTool.VerifyResult.ERROR_NOT_FOUND_RECIPE -> "レシピが存在しないようです" to COLOR_RED
-                ResetTableTool.VerifyResult.ERROR_REQUIRE_STACK_COUNT -> "アイテム数が足りません" to COLOR_RED
-                ResetTableTool.VerifyResult.SUCCESS -> "戻せます" to COLOR_SKYBLUE
-            }
+            val textColorPair = ResetTableTool.resolveUserDescription(status) ?: return
             textRenderer.draw(
                 matrices,
                 textColorPair.first,
