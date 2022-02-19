@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "resettable:block/reset_table_block"
+    }
+  }
+}

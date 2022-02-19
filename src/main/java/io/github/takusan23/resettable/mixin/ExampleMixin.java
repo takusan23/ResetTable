@@ -1,4 +1,4 @@
-package net.fabricmc.example.mixin;
+package io.github.takusan23.resettable.mixin;
 
 import net.minecraft.client.gui.screen.TitleScreen;
 import org.spongepowered.asm.mixin.Mixin;
