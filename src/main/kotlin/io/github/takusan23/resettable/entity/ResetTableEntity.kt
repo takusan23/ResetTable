@@ -28,6 +28,9 @@ class ResetTableEntity(
     /** リセットテーブルのインベントリ */
     private val inventory = DefaultedList.ofSize(10, ItemStack.EMPTY)
 
+    /** 登録したコールバックを入れておく配列 */
+    private val onChangeListenerList: MutableList<() -> Unit> = mutableListOf()
+
     /**
      * Entityが持っているアイテムを返す
      *
@@ -37,32 +40,44 @@ class ResetTableEntity(
         return inventory
     }
 
-    /**
-     * GUIを返す？
-     * */
+    /** GUIを返す？ */
     override fun createMenu(syncId: Int, playerInventory: PlayerInventory, player: PlayerEntity?): ScreenHandler {
         return ResetTableScreenHandler(syncId, playerInventory, this)
     }
 
-    /** わからん... */
+    /**
+     * 多分アイテムを入れたりしたときに呼ばれる
+     *
+     * ここでレシピ判定すれば良さそう？
+     * */
     override fun markDirty() {
-
+        // コールバックを呼ぶ
+        onChangeListenerList.forEach { it.invoke() }
     }
 
     /** インベントリを保存する */
     override fun writeNbt(nbt: NbtCompound?) {
         super.writeNbt(nbt)
-        Inventories.writeNbt(nbt, this.inventory);
+        Inventories.writeNbt(nbt, this.inventory)
     }
 
     /** 保存したインベントリを取り出す */
     override fun readNbt(nbt: NbtCompound?) {
         super.readNbt(nbt)
-        Inventories.readNbt(nbt, this.inventory);
+        Inventories.readNbt(nbt, this.inventory)
     }
 
     override fun getDisplayName(): Text {
         // ブロックのローカライズテキストをそのまま利用する
-        return TranslatableText(cachedState.block.translationKey);
+        return TranslatableText(cachedState.block.translationKey)
+    }
+
+    /**
+     * アイテム変更イベント？を購読する
+     *
+     * @param update アイテムの操作があったら呼ばれる関数
+     * */
+    fun addChangeListener(update: () -> Unit) {
+        onChangeListenerList.add(update)
     }
 }

@@ -10,7 +10,7 @@ import net.minecraft.util.collection.DefaultedList
 /**
  * 簡単な[Inventory]の実装
  *
- * パクった：https://fabricmc.net/wiki/tutorial:inventory
+ * パクった：[https://fabricmc.net/wiki/tutorial:inventory]
  * */
 fun interface ImplementedInventory : Inventory {
 
