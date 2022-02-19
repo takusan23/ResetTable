@@ -1,7 +1,6 @@
 package io.github.takusan23.resettable.block
 
 import net.fabricmc.fabric.api.`object`.builder.v1.block.FabricBlockSettings
-import net.minecraft.block.Block
 import net.minecraft.block.Material
 import net.minecraft.sound.BlockSoundGroup
 
@@ -10,7 +9,7 @@ import net.minecraft.sound.BlockSoundGroup
  * */
 object ResetTableBlocks {
 
-    /** リセットテーブル */
-    val RESET_TABLE_BLOCK = Block(FabricBlockSettings.of(Material.WOOD).strength(2.5F).sounds(BlockSoundGroup.WOOD))
+    /** リセットテーブルブロック */
+    val RESET_TABLE_BLOCK = ResetTableBlock(FabricBlockSettings.of(Material.WOOD).strength(2.5F).sounds(BlockSoundGroup.WOOD))
 
 }

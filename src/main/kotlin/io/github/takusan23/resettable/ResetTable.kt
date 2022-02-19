@@ -1,6 +1,7 @@
 package io.github.takusan23.resettable
 
 import io.github.takusan23.resettable.block.ResetTableBlocks
+import io.github.takusan23.resettable.entity.ResetTableEntities
 import io.github.takusan23.resettable.item.ResetTableItems
 import net.minecraft.util.Identifier
 import net.minecraft.util.registry.Registry
@@ -16,6 +17,17 @@ fun init() {
     registerItems()
     // ブロックの追加
     registerBlocks()
+    // Entityの追加
+    registerEntities()
+}
+
+/**
+ * エンティティをFabricに登録する。
+ *
+ * MOD初期化時に呼ぶ
+ * */
+private fun registerEntities() {
+    Registry.register(Registry.BLOCK_ENTITY_TYPE, Identifier("resettable", "reset_table_block"), ResetTableEntities.RESET_TABLE_BLOCK_ENTITY)
 }
 
 /**

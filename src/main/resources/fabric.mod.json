@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "io.github.takusan23.resettable.ResetTableKt::init"
+    ],
+    "client": [
+      "io.github.takusan23.resettable.ResetTableClientSideKt::clientSideInit"
     ]
   },
   "mixins": [
