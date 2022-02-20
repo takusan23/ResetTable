@@ -17,6 +17,9 @@ object ResetTableTool {
 
     /** [verifyResultItemRecipe]のレスポンス */
     enum class VerifyResult {
+        /** 耐久度が減っている */
+        ERROR_ITEM_DAMAGED,
+
         /** ItemStackが空 */
         ERROR_EMPTY_ITEM_STACK,
 
@@ -49,7 +52,9 @@ object ResetTableTool {
             .mapNotNull { it as? CraftingRecipe }
             // アイテムを確認する
             .find { it.output.item == resultItemStack.item }
+
         return when {
+            resultItemStack.isDamaged -> VerifyResult.ERROR_ITEM_DAMAGED
             EnchantmentHelper.get(resultItemStack).isNotEmpty() -> VerifyResult.ERROR_ENCHANTED_ITEM
             materials == null -> VerifyResult.ERROR_NOT_FOUND_RECIPE
             materials.output!!.count > resultItemStack.count -> VerifyResult.ERROR_REQUIRE_STACK_COUNT
@@ -99,6 +104,7 @@ object ResetTableTool {
     fun resolveUserDescription(result: VerifyResult): Pair<String, Int>? {
         return when (result) {
             VerifyResult.ERROR_EMPTY_ITEM_STACK -> null // これは還元スロットが空の場合なので何もしない
+            VerifyResult.ERROR_ITEM_DAMAGED -> "アイテムの耐久値が減っています" to COLOR_RED
             VerifyResult.ERROR_NOT_FOUND_RECIPE -> "レシピが存在しないようです" to COLOR_RED
             VerifyResult.ERROR_REQUIRE_STACK_COUNT -> "アイテム数が足りません" to COLOR_RED
             VerifyResult.ERROR_ENCHANTED_ITEM -> "エンチャント済みアイテムは戻せません" to COLOR_RED

@@ -78,15 +78,20 @@ class ResetTableScreenHandler(
     override fun transferSlot(player: PlayerEntity?, index: Int): ItemStack {
         var newStack = ItemStack.EMPTY
         val slot = slots[index]
-        if (slot != null && slot.hasStack()) {
+        if (slot.hasStack()) {
             val originalStack = slot.stack
             newStack = originalStack.copy()
             if (index < inventory.size()) {
+                // ResetTableのインベントリ -> プレイヤーのインベントリ
                 if (!insertItem(originalStack, inventory.size(), slots.size, true)) {
                     return ItemStack.EMPTY
                 }
-            } else if (!insertItem(originalStack, 0, inventory.size(), false)) {
-                return ItemStack.EMPTY
+            } else {
+                // プレイヤーのインベントリ -> ResetTableのインベントリ
+                // 材料スロット（3x3）の領域には入れたくないので0番目だけ入れるように
+                if (!insertItem(originalStack, 0, 1, false)) {
+                    return ItemStack.EMPTY
+                }
             }
             if (originalStack.isEmpty) {
                 slot.stack = ItemStack.EMPTY

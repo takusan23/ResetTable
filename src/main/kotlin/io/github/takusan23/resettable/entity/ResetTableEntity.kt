@@ -56,16 +56,6 @@ class ResetTableEntity(
         return ResetTableScreenHandler(syncId, playerInventory, this)
     }
 
-    /**
-     * 多分アイテムを入れたりしたときに呼ばれる
-     *
-     * ここでレシピ判定すれば良さそう？
-     * */
-    override fun markDirty() {
-        // コールバックを呼ぶ
-        onChangeListenerList.forEach { it.invoke() }
-    }
-
     /** ホッパー等からアクセスできるスロットを返す */
     override fun getAvailableSlots(side: Direction?): IntArray {
         return when (side) {
@@ -109,6 +99,16 @@ class ResetTableEntity(
     override fun getDisplayName(): Text {
         // ブロックのローカライズテキストをそのまま利用する
         return TranslatableText(cachedState.block.translationKey)
+    }
+
+    /**
+     * 多分アイテムを入れたりしたときに呼ばれる
+     *
+     * ここでレシピ判定すれば良さそう？
+     * */
+    override fun markDirty() {
+        // コールバックを呼ぶ
+        onChangeListenerList.forEach { it.invoke() }
     }
 
     /**
