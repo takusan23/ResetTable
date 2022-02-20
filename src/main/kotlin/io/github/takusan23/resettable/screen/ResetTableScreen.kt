@@ -14,7 +14,7 @@ import net.minecraft.util.Identifier
  * */
 class ResetTableScreen(private val resetTableScreenHandler: ResetTableScreenHandler?, inventory: PlayerInventory?, title: Text?) : HandledScreen<ResetTableScreenHandler>(resetTableScreenHandler, inventory, title) {
     // バニラの作業台の背景画像をパク..借りる
-    private val TEXTURE = Identifier("minecraft", "textures/gui/container/crafting_table.png")
+    private val TEXTURE = Identifier("resettable", "textures/gui/reset_table_gui.png")
 
     override fun drawBackground(matrices: MatrixStack?, delta: Float, mouseX: Int, mouseY: Int) {
         RenderSystem.setShader { GameRenderer.getPositionTexShader() }

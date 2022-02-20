@@ -1,6 +1,5 @@
 package io.github.takusan23.resettable.screen
 
-import io.github.takusan23.resettable.entity.ResetTableEntity
 import io.github.takusan23.resettable.entity.ResetTableEntity.Companion.RESET_TABLE_RESET_ITEM_SLOT
 import io.github.takusan23.resettable.entity.ResetTableScreenHandlers
 import io.github.takusan23.resettable.tool.ResetTableTool
@@ -26,18 +25,6 @@ class ResetTableScreenHandler(
     init {
         // インベントリのGUIを開く
         inventory.onOpen(playerInventory.player)
-
-        // インベントリの変更コールバックを作ったので購読する
-        (inventory as? ResetTableEntity)?.addChangeListener {
-            // 作るのに必要な材料を返す
-            val recipeResolveData = ResetTableTool.findCraftingMaterial(world, getResetItemStack())
-            // 一度だけ。もとに戻したアイテムが入るスロットがからじゃない場合も受け付けない
-            if (recipeResolveData != null && isMaterialSlotEmpty()) {
-                recipeResolveData.resultItemStack.forEachIndexed { index, itemStack -> inventory.setStack(index, itemStack) }
-                // 戻したので完成品スロットをクリアするか、戻しきれなかったアイテムを入れる
-                inventory.setStack(RESET_TABLE_RESET_ITEM_SLOT, recipeResolveData.resolveSlotItemStack)
-            }
-        }
 
         // 完成品スロット
         addSlot(Slot(inventory, 9, 124, 35))
@@ -109,14 +96,5 @@ class ResetTableScreenHandler(
      * */
     private fun getResetItemStack(): ItemStack {
         return inventory.getStack(RESET_TABLE_RESET_ITEM_SLOT)
-    }
-
-    /**
-     * 戻したアイテムが入るスロットが空っぽかどうか
-     *
-     * @return 3x3 のスロットが空っぽならtrue
-     * */
-    private fun isMaterialSlotEmpty(): Boolean {
-        return (0..8).map { inventory.getStack(it) }.all { it.isEmpty }
     }
 }

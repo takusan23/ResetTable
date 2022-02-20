@@ -1,6 +1,7 @@
 package io.github.takusan23.resettable.entity
 
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
+import io.github.takusan23.resettable.tool.ResetTableTool
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
@@ -39,9 +40,6 @@ class ResetTableEntity(
      * */
     private val inventory = DefaultedList.ofSize(10, ItemStack.EMPTY)
 
-    /** 登録したコールバックを入れておく配列 */
-    private val onChangeListenerList: MutableList<() -> Unit> = mutableListOf()
-
     /**
      * Entityが持っているアイテムを返す
      *
@@ -61,12 +59,7 @@ class ResetTableEntity(
         return when (side) {
             Direction.UP -> intArrayOf(RESET_TABLE_RESET_ITEM_SLOT)
             Direction.DOWN -> (0..8).toList().toIntArray()
-            Direction.NORTH,
-            Direction.SOUTH,
-            Direction.WEST,
-            Direction.EAST,
-            -> intArrayOf()
-            null -> intArrayOf()
+            else -> intArrayOf()
         }
     }
 
@@ -104,21 +97,35 @@ class ResetTableEntity(
     /**
      * 多分アイテムを入れたりしたときに呼ばれる
      *
-     * ここでレシピ判定すれば良さそう？
+     * ここでレシピ検索をしている
      * */
     override fun markDirty() {
-        // コールバックを呼ぶ
-        onChangeListenerList.forEach { it.invoke() }
+        updateResult()
+    }
+
+    /** いまの還元スロットに入っているアイテムのレシピを探して、材料スロット（3x3）に入れる */
+    private fun updateResult() {
+        val nonNullWorld = world ?: return
+        val resetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
+        // 作るのに必要な材料を返す
+        val recipeResolveData = ResetTableTool.findCraftingMaterial(nonNullWorld, resetSlotItemStack)
+        // 一度だけ。もとに戻したアイテムが入るスロットがからじゃない場合も受け付けない
+        if (recipeResolveData != null && isMaterialSlotEmpty()) {
+            recipeResolveData.resultItemStack.forEachIndexed { index, itemStack -> setStack(index, itemStack) }
+            // 戻したので完成品スロットをクリアするか、戻しきれなかったアイテムを入れる
+            setStack(RESET_TABLE_RESET_ITEM_SLOT, recipeResolveData.resolveSlotItemStack)
+        }
     }
 
     /**
-     * アイテム変更イベント？を購読する
+     * 戻したアイテムが入るスロットが空っぽかどうか
      *
-     * @param update アイテムの操作があったら呼ばれる関数
+     * @return 3x3 のスロットが空っぽならtrue
      * */
-    fun addChangeListener(update: () -> Unit) {
-        onChangeListenerList.add(update)
+    private fun isMaterialSlotEmpty(): Boolean {
+        return (0..8).map { getStack(it) }.all { it.isEmpty }
     }
+
 
     companion object {
 
