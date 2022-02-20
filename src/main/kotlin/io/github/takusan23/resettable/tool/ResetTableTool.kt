@@ -4,6 +4,7 @@ import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.minecraft.enchantment.EnchantmentHelper
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
+import net.minecraft.text.TranslatableText
 import net.minecraft.world.World
 
 /** このMODの目的となる作ったアイテムを戻すための関数がある */
@@ -15,25 +16,30 @@ object ResetTableTool {
     /** 青色カラーコード */
     private val COLOR_BLUE = 0x0000FF
 
-    /** [verifyResultItemRecipe]のレスポンス */
-    enum class VerifyResult {
-        /** 耐久度が減っている */
-        ERROR_ITEM_DAMAGED,
+    /**
+     * [verifyResultItemRecipe]のレスポンス
+     *
+     * @param localizeKey ja_jp.json 等のローカライズでのキー
+     * @param textColor 文字の色
+     * */
+    enum class VerifyResult(val localizeKey: String, val textColor: Int) {
+        /** ItemStackが空っぽ。これはユーザーにエラーとしては表示しなくていい（アイテム入ってないエラーなので） */
+        ERROR_EMPTY_ITEM_STACK("gui.resettable.error_empty_item_stack", COLOR_BLUE),
 
-        /** ItemStackが空 */
-        ERROR_EMPTY_ITEM_STACK,
+        /** 耐久度が減っている */
+        ERROR_ITEM_DAMAGED("gui.resettable.error_item_damaged", COLOR_RED),
 
         /** レシピが存在しない */
-        ERROR_NOT_FOUND_RECIPE,
+        ERROR_NOT_FOUND_RECIPE("gui.resettable.error_not_found_recipe", COLOR_RED),
 
         /** スタック数が足りない */
-        ERROR_REQUIRE_STACK_COUNT,
+        ERROR_REQUIRE_STACK_COUNT("gui.resettable.error_require_stack_count", COLOR_RED),
 
         /** エンチャント済みの道具はおそらくもとに戻さないだろう */
-        ERROR_ENCHANTED_ITEM,
+        ERROR_ENCHANTED_ITEM("gui.resettable.error_enchanted_item", COLOR_RED),
 
         /** 戻せる */
-        SUCCESS,
+        SUCCESS("gui.resettable.successful", COLOR_BLUE),
     }
 
     /**
@@ -44,8 +50,6 @@ object ResetTableTool {
      * @return [VerifyResult]
      * */
     fun verifyResultItemRecipe(world: World, resultItemStack: ItemStack): VerifyResult {
-        if (resultItemStack == ItemStack.EMPTY) return VerifyResult.ERROR_EMPTY_ITEM_STACK
-
         val recipeManager = world.recipeManager.values()
         val materials = recipeManager
             // 作業台だけ
@@ -54,6 +58,7 @@ object ResetTableTool {
             .find { it.output.item == resultItemStack.item }
 
         return when {
+            resultItemStack == ItemStack.EMPTY -> VerifyResult.ERROR_EMPTY_ITEM_STACK
             resultItemStack.isDamaged -> VerifyResult.ERROR_ITEM_DAMAGED
             EnchantmentHelper.get(resultItemStack).isNotEmpty() -> VerifyResult.ERROR_ENCHANTED_ITEM
             materials == null -> VerifyResult.ERROR_NOT_FOUND_RECIPE
@@ -102,14 +107,11 @@ object ResetTableTool {
      * @return 文字と色のPair。nullの場合はアイテムが入ってないときで特にユーザー向けの説明はいらないかな
      * */
     fun resolveUserDescription(result: VerifyResult): Pair<String, Int>? {
-        return when (result) {
-            VerifyResult.ERROR_EMPTY_ITEM_STACK -> null // これは還元スロットが空の場合なので何もしない
-            VerifyResult.ERROR_ITEM_DAMAGED -> "アイテムの耐久値が減っています" to COLOR_RED
-            VerifyResult.ERROR_NOT_FOUND_RECIPE -> "レシピが存在しないようです" to COLOR_RED
-            VerifyResult.ERROR_REQUIRE_STACK_COUNT -> "アイテム数が足りません" to COLOR_RED
-            VerifyResult.ERROR_ENCHANTED_ITEM -> "エンチャント済みアイテムは戻せません" to COLOR_RED
-            VerifyResult.SUCCESS -> "もとに戻せます" to COLOR_BLUE
+        // 還元スロットが空っぽのときのエラーは出さない
+        if (result == VerifyResult.ERROR_EMPTY_ITEM_STACK) {
+            return null
         }
+        return TranslatableText(result.localizeKey).string to result.textColor
     }
 
 }

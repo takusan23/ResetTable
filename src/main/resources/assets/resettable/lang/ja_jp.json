@@ -1,4 +1,10 @@
 {
   "itemGroup.resettable.resettable_creative_tab": "リセットテーブル",
-  "block.resettable.reset_table_block": "リセットテーブル"
+  "block.resettable.reset_table_block": "リセットテーブル",
+  "gui.resettable.error_empty_item_stack": "アイテムが入っていません",
+  "gui.resettable.error_item_damaged": "アイテムの耐久値が減っています",
+  "gui.resettable.error_not_found_recipe": "レシピが存在しないようです",
+  "gui.resettable.error_require_stack_count": "アイテム数が足りません",
+  "gui.resettable.error_enchanted_item": "エンチャント済みアイテムは戻せません",
+  "gui.resettable.successful": "もとに戻せます"
 }
