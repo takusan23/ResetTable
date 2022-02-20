@@ -40,6 +40,9 @@ class ResetTableEntity(
      * */
     private val inventory = DefaultedList.ofSize(10, ItemStack.EMPTY)
 
+    /** アイテム変更コールバックの配列 */
+    private val itemChangeCallbackList = mutableListOf<() -> Unit>()
+
     /**
      * Entityが持っているアイテムを返す
      *
@@ -101,6 +104,7 @@ class ResetTableEntity(
      * */
     override fun markDirty() {
         updateResult()
+        itemChangeCallbackList.forEach { it.invoke() }
     }
 
     /** いまの還元スロットに入っているアイテムのレシピを探して、材料スロット（3x3）に入れる */
@@ -115,6 +119,15 @@ class ResetTableEntity(
             // 戻したので完成品スロットをクリアするか、戻しきれなかったアイテムを入れる
             setStack(RESET_TABLE_RESET_ITEM_SLOT, recipeResolveData.resolveSlotItemStack)
         }
+    }
+
+    /**
+     * アイテム変更コールバックを登録する。使ってないけどいつか使うかも
+     *
+     * @param callback アイテム変更時に呼ばれる関数
+     * */
+    fun addItemChangeCallback(callback: () -> Unit) {
+        itemChangeCallbackList.add(callback)
     }
 
     /**

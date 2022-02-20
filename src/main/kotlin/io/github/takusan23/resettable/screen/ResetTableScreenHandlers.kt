@@ -1,6 +1,5 @@
-package io.github.takusan23.resettable.entity
+package io.github.takusan23.resettable.screen
 
-import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.util.Identifier
 

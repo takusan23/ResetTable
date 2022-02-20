@@ -23,7 +23,7 @@ import net.minecraft.world.World
 class ResetTableBlock(settings: Settings?) : BlockWithEntity(settings) {
 
     /** Entityを返す。アイテムを保持するやつ*/
-    override fun createBlockEntity(pos: BlockPos, state: BlockState): BlockEntity? {
+    override fun createBlockEntity(pos: BlockPos, state: BlockState): BlockEntity {
         return ResetTableEntity(pos, state)
     }
 
@@ -39,7 +39,6 @@ class ResetTableBlock(settings: Settings?) : BlockWithEntity(settings) {
             val screenHandlerFactory = state.createScreenHandlerFactory(world, pos)
             // クライアント側へGUIを開くようお願いする
             player?.openHandledScreen(screenHandlerFactory)
-            println(player)
         }
         return ActionResult.SUCCESS
     }

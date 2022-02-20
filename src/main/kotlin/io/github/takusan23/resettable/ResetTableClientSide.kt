@@ -1,6 +1,6 @@
 package io.github.takusan23.resettable
 
-import io.github.takusan23.resettable.entity.ResetTableScreenHandlers
+import io.github.takusan23.resettable.screen.ResetTableScreenHandlers
 import io.github.takusan23.resettable.screen.ResetTableScreen
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
 

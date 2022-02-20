@@ -1,7 +1,6 @@
 package io.github.takusan23.resettable.screen
 
 import io.github.takusan23.resettable.entity.ResetTableEntity.Companion.RESET_TABLE_RESET_ITEM_SLOT
-import io.github.takusan23.resettable.entity.ResetTableScreenHandlers
 import io.github.takusan23.resettable.tool.ResetTableTool
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
@@ -46,6 +45,7 @@ class ResetTableScreenHandler(
             addSlot(Slot(playerInventory, m, 8 + m * 18, 142))
         }
     }
+
 
     /**
      * スロットに入れたアイテムが戻せるか確かめる関数

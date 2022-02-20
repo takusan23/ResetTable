@@ -4,6 +4,7 @@ import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.minecraft.enchantment.EnchantmentHelper
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
+import net.minecraft.recipe.ShapedRecipe
 import net.minecraft.text.TranslatableText
 import net.minecraft.world.World
 
@@ -72,9 +73,10 @@ object ResetTableTool {
      *
      * @param world レシピを取得するのに使う
      * @param resetItemStack 戻したいアイテム
-     * @return レシピがない場合はnull
+     * @return [verifyResultItemRecipe]で成功を返さなかった場合はnull
      * */
     fun findCraftingMaterial(world: World, resetItemStack: ItemStack): RecipeResolveData? {
+        // 検証した結果もとに戻せない場合はnullを返す
         if (verifyResultItemRecipe(world, resetItemStack) != VerifyResult.SUCCESS) return null
 
         val recipeManager = world.recipeManager.values()
@@ -93,10 +95,53 @@ object ResetTableTool {
             // 戻したけど余ったぶん
             val notResolveCount = resetItemStackCount % recipeCreateItemCount
             // 返す
+            val notResolveItemStack = resetItemStack.copy().apply { count = notResolveCount }
             val materialList = recipe.ingredients
                 .map { it.matchingStacks.getOrNull(0)?.copy()?.apply { count = craftCount } ?: ItemStack.EMPTY }
-            val notResolveItemStack = resetItemStack.copy().apply { count = notResolveCount }
-            RecipeResolveData(materialList, notResolveItemStack)
+
+            // 定形レシピの場合は材料スロット(3x3)で正しいアイテムの配列に置き換える
+            return if (recipe is ShapedRecipe) {
+                // 作成で使う縦、横のスロット数
+                val patternWidth = recipe.width
+                val patternHeight = recipe.height
+                // レシピの形に整形した配列
+                val recipePatternList = mutableListOf<ItemStack>()
+
+                /**
+                 * 例えば剣のレシピがこうで
+                 *
+                 * X
+                 * X
+                 * Y
+                 *
+                 * 普通に取得するとこうなる
+                 *
+                 * [X,X,Y]
+                 *
+                 * これだとレシピの形になっていないのでこんな感じの配列にする。(以下の例は改行してるけど)
+                 *
+                 * [
+                 *  X,empty,empty,
+                 *  X,empty,empty,
+                 *  Y,empty,empty
+                 * ]
+                 *
+                 * */
+                var prevPos = 0
+                repeat(patternHeight) { height ->
+                    // ここで各横スロットのアイテムを一斉に入れている
+                    // prevPosには各横スロットの最後のIndexが入ってる
+                    recipePatternList.addAll(materialList.subList(prevPos, prevPos + patternWidth))
+                    // 例：使う幅が2スロット分の場合は3番目に空のアイテムを入れる
+                    repeat(3 - patternWidth) {
+                        recipePatternList.add(ItemStack.EMPTY)
+                    }
+                    prevPos += patternWidth
+                }
+                RecipeResolveData(recipePatternList, notResolveItemStack)
+            } else {
+                RecipeResolveData(materialList, notResolveItemStack)
+            }
         } else null
     }
 

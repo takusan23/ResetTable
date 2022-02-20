@@ -12,7 +12,7 @@
     "sources": "https://github.com/takusan23/ResetTable"
   },
   "license": "Apache-2.0 License",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/resettable/textures/block/reset_table_top.png",
   "environment": "*",
   "entrypoints": {
     "main": [

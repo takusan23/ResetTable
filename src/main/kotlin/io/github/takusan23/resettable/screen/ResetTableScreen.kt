@@ -27,7 +27,7 @@ class ResetTableScreen(private val resetTableScreenHandler: ResetTableScreenHand
     /** テキスト描画はここで */
     override fun drawForeground(matrices: MatrixStack?, mouseX: Int, mouseY: Int) {
         super.drawForeground(matrices, mouseX, mouseY)
-        // アイテムが戻せない場合はなんで戻せない理由を
+        // アイテムが戻せない場合はなんで戻せないのか理由を
         resetTableScreenHandler?.verifyResultItem()?.also { status ->
             // 文字と色を解決
             val textColorPair = ResetTableTool.resolveUserDescription(status) ?: return
