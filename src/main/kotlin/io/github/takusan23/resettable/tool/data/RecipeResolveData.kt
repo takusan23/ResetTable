@@ -6,10 +6,19 @@ import net.minecraft.item.ItemStack
 /**
  * [ResetTableTool.findCraftingMaterial]の返り値
  *
- * @param resultItemStack 材料
+ * [recipePatternFormattedList]はこんなかんじの配列になってる
+ *
+ * [
+ *   x,x,x,
+ *   x, ,x,
+ *   x,x,x
+ * ]
+ *
+ *
+ * @param recipePatternFormattedList レシピの配列
  * @param resolveSlotItemStack 戻したけどアイテム数が余った場合は入る
  * */
 data class RecipeResolveData(
-    val resultItemStack: List<ItemStack>,
+    val recipePatternFormattedList: List<ItemStack>,
     val resolveSlotItemStack: ItemStack,
 )

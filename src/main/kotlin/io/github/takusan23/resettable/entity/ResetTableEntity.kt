@@ -2,6 +2,7 @@ package io.github.takusan23.resettable.entity
 
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import io.github.takusan23.resettable.tool.ResetTableTool
+import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
@@ -107,17 +108,45 @@ class ResetTableEntity(
         itemChangeCallbackList.forEach { it.invoke() }
     }
 
+    /** 還元スロットに入れたアイテムのレシピ検索結果 */
+    private var currentRecipeResolveData: RecipeResolveData? = null
+
+    /** 複数あった場合にレシピを切り替えるための */
+    private var pageIndex = 0
+
+    /** 還元スロットに入っているアイテム */
+    private var currentResetSlotItemStack = ItemStack.EMPTY
+
     /** いまの還元スロットに入っているアイテムのレシピを探して、材料スロット（3x3）に入れる */
     private fun updateResult() {
         val nonNullWorld = world ?: return
         val resetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
-        // 作るのに必要な材料を返す
-        val recipeResolveData = ResetTableTool.findCraftingMaterial(nonNullWorld, resetSlotItemStack)
-        // 一度だけ。もとに戻したアイテムが入るスロットがからじゃない場合も受け付けない
-        if (recipeResolveData != null && isMaterialSlotEmpty()) {
-            recipeResolveData.resultItemStack.forEachIndexed { index, itemStack -> setStack(index, itemStack) }
-            // 戻したので完成品スロットをクリアするか、戻しきれなかったアイテムを入れる
-            setStack(RESET_TABLE_RESET_ITEM_SLOT, recipeResolveData.resolveSlotItemStack)
+
+        // 作るのに必要なアイテムを取得する
+        // 還元スロットのアイテムが変わっていたら再計算
+        if (ItemStack.areItemsEqual(currentResetSlotItemStack, resetSlotItemStack)) {
+            currentRecipeResolveData = ResetTableTool.findCraftingMaterial(nonNullWorld, resetSlotItemStack)?.getOrNull(0)
+        }
+
+        // 材料スロットが空いていれば
+        if (isMaterialSlotEmpty()) {
+            setMaterialSlot()
+            currentRecipeResolveData?.resolveSlotItemStack?.also { setStack(RESET_TABLE_RESET_ITEM_SLOT, it) }
+        }
+
+        currentResetSlotItemStack = resetSlotItemStack
+
+    }
+
+    /** 材料スロットの中身を空っぽにする */
+    private fun clearMaterialSlot() {
+        (0..8).map { setStack(it, ItemStack.EMPTY) }
+    }
+
+    /** [currentRecipeResolveData] を使って材料スロット元に戻す */
+    private fun setMaterialSlot() {
+        currentRecipeResolveData?.recipePatternFormattedList?.forEachIndexed { index, itemStack ->
+            setStack(index, itemStack)
         }
     }
 
@@ -131,12 +160,41 @@ class ResetTableEntity(
     }
 
     /**
+     * 還元スロットが空っぽならtrue
+     *
+     * @return 空ならtrue
+     * */
+    private fun isResetItemSlotEmpty(): Boolean {
+        return getStack(RESET_TABLE_RESET_ITEM_SLOT).isEmpty
+    }
+
+    /**
      * 戻したアイテムが入るスロットが空っぽかどうか
      *
      * @return 3x3 のスロットが空っぽならtrue
      * */
     private fun isMaterialSlotEmpty(): Boolean {
         return (0..8).map { getStack(it) }.all { it.isEmpty }
+    }
+
+    /**
+     * 材料スロットのアイテムを取得する
+     *
+     * @return 3x3 のアイテムスロット
+     * */
+    private fun getRecipePatternSlotItemList(): List<ItemStack> {
+        return (0..8).map { getStack(it) }
+    }
+
+    /**
+     * ２つのItemStackの配列を見て中身が同じかどうか
+     *
+     * @param list1 ItemStackの配列
+     * @param list2 ItemStackの配列
+     * @return 同じ場合はtrue
+     * */
+    private fun isEqualItemStackList(list1: List<ItemStack>, list2: List<ItemStack>): Boolean {
+        return list1.mapIndexed { index, itemStack -> ItemStack.areEqual(list2[index], itemStack) }.all { it }
     }
 
 

@@ -46,7 +46,6 @@ class ResetTableScreenHandler(
         }
     }
 
-
     /**
      * スロットに入れたアイテムが戻せるか確かめる関数
      *
