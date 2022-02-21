@@ -1,8 +1,10 @@
 package io.github.takusan23.resettable.entity
 
+import io.github.takusan23.resettable.network.ResetTableNetworks
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import io.github.takusan23.resettable.tool.ResetTableTool
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
@@ -18,6 +20,7 @@ import net.minecraft.text.TranslatableText
 import net.minecraft.util.collection.DefaultedList
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
+
 
 /**
  * リセットテーブルが持つEntity
@@ -43,6 +46,26 @@ class ResetTableEntity(
 
     /** アイテム変更コールバックの配列 */
     private val itemChangeCallbackList = mutableListOf<() -> Unit>()
+
+    /** 還元スロットに入れたアイテムのレシピ検索結果 */
+    private var currentRecipeResolveDataList: List<RecipeResolveData>? = null
+
+    /** 還元スロットに入っているアイテム */
+    private var currentResetSlotItemStack = ItemStack.EMPTY
+
+    /** 複数あった場合にレシピを切り替えるための */
+    private var pageIndex = 0
+
+    init {
+        /**
+         * クライアント側のGUI操作が行われた際にサーバー側へ通知が来るのでここで受け取る
+         * */
+        ServerPlayNetworking.registerGlobalReceiver(ResetTableNetworks.SEND_RECIPE_INDEX_CHANGE) { server, player, handler, buf, responseSender ->
+            pageIndex = buf.getInt(0)
+            println("トータルサイズ：${ResetTableTool.findCraftingMaterial(world!!, currentResetSlotItemStack)?.size} / Index：$pageIndex")
+            updateResultItems()
+        }
+    }
 
     /**
      * Entityが持っているアイテムを返す
@@ -108,15 +131,6 @@ class ResetTableEntity(
         itemChangeCallbackList.forEach { it.invoke() }
     }
 
-    /** 還元スロットに入れたアイテムのレシピ検索結果 */
-    private var currentRecipeResolveData: RecipeResolveData? = null
-
-    /** 複数あった場合にレシピを切り替えるための */
-    private var pageIndex = 0
-
-    /** 還元スロットに入っているアイテム */
-    private var currentResetSlotItemStack = ItemStack.EMPTY
-
     /** いまの還元スロットに入っているアイテムのレシピを探して、材料スロット（3x3）に入れる */
     private fun updateResult() {
         val nonNullWorld = world ?: return
@@ -125,29 +139,26 @@ class ResetTableEntity(
         // 作るのに必要なアイテムを取得する
         // 還元スロットのアイテムが変わっていたら再計算
         if (ItemStack.areItemsEqual(currentResetSlotItemStack, resetSlotItemStack)) {
-            currentRecipeResolveData = ResetTableTool.findCraftingMaterial(nonNullWorld, resetSlotItemStack)?.getOrNull(0)
+            currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(nonNullWorld, resetSlotItemStack) ?: return
         }
 
         // 材料スロットが空いていれば
         if (isMaterialSlotEmpty()) {
-            setMaterialSlot()
-            currentRecipeResolveData?.resolveSlotItemStack?.also { setStack(RESET_TABLE_RESET_ITEM_SLOT, it) }
+            updateResultItems()
         }
 
         currentResetSlotItemStack = resetSlotItemStack
-
     }
 
-    /** 材料スロットの中身を空っぽにする */
-    private fun clearMaterialSlot() {
-        (0..8).map { setStack(it, ItemStack.EMPTY) }
-    }
-
-    /** [currentRecipeResolveData] を使って材料スロット元に戻す */
-    private fun setMaterialSlot() {
-        currentRecipeResolveData?.recipePatternFormattedList?.forEachIndexed { index, itemStack ->
-            setStack(index, itemStack)
-        }
+    fun updateResultItems() {
+        currentRecipeResolveDataList
+            ?.getOrNull(pageIndex)
+            ?.recipePatternFormattedList
+            ?.forEachIndexed { index, itemStack -> setStack(index, itemStack) }
+        currentRecipeResolveDataList
+            ?.getOrNull(pageIndex)
+            ?.resolveSlotItemStack
+            ?.also { setStack(RESET_TABLE_RESET_ITEM_SLOT, it) }
     }
 
     /**
@@ -157,15 +168,6 @@ class ResetTableEntity(
      * */
     fun addItemChangeCallback(callback: () -> Unit) {
         itemChangeCallbackList.add(callback)
-    }
-
-    /**
-     * 還元スロットが空っぽならtrue
-     *
-     * @return 空ならtrue
-     * */
-    private fun isResetItemSlotEmpty(): Boolean {
-        return getStack(RESET_TABLE_RESET_ITEM_SLOT).isEmpty
     }
 
     /**
@@ -202,6 +204,5 @@ class ResetTableEntity(
 
         /** リセットしたいアイテムが入るスロット番号 */
         const val RESET_TABLE_RESET_ITEM_SLOT = 9
-
     }
 }

@@ -46,15 +46,6 @@ class ResetTableScreenHandler(
         }
     }
 
-    /**
-     * スロットに入れたアイテムが戻せるか確かめる関数
-     *
-     * @return [ResetTableTool.VerifyResult]
-     * */
-    fun verifyResultItem(): ResetTableTool.VerifyResult {
-        return ResetTableTool.verifyResultItemRecipe(world, getResetItemStack())
-    }
-
     /** よくわからｎ */
     override fun canUse(player: PlayerEntity?): Boolean {
         return this.inventory.canPlayerUse(player)
@@ -86,6 +77,15 @@ class ResetTableScreenHandler(
             }
         }
         return newStack
+    }
+
+    /**
+     * スロットに入れたアイテムが戻せるか確かめる関数
+     *
+     * @return [ResetTableTool.VerifyResult]
+     * */
+    fun verifyResultItem(): ResetTableTool.VerifyResult {
+        return ResetTableTool.verifyResultItemRecipe(world, getResetItemStack())
     }
 
     /**
