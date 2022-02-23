@@ -2,6 +2,7 @@ package io.github.takusan23.resettable.entity
 
 import io.github.takusan23.resettable.screen.ResetTableScreen
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
+import io.github.takusan23.resettable.tool.ResetTableTool
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
@@ -153,10 +154,12 @@ class ResetTableEntity(
     /** いまの還元スロットに入っているアイテムのレシピを探して、材料スロット（3x3）に入れる */
     private fun updateResult() {
 
-        val nonNullWorld = world ?: return
         val resetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
         currentResetSlotItemStack = resetSlotItemStack
 
+        if (isMaterialSlotEmpty()) {
+            updateResultItems()
+        }
 /*
         // 作るのに必要なアイテムを取得する
         // 還元スロットのアイテムが変わっていたら再計算
@@ -174,6 +177,10 @@ class ResetTableEntity(
     }
 
     fun updateResultItems() {
+
+        val world = world ?: return
+        currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(world, currentResetSlotItemStack)
+
         currentRecipeResolveDataList
             ?.getOrNull(pageIndex)
             ?.recipePatternFormattedList

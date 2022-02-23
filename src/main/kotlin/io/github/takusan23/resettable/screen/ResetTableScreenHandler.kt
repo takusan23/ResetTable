@@ -73,7 +73,6 @@ class ResetTableScreenHandler(
     }
 
     override fun onButtonClick(player: PlayerEntity?, id: Int): Boolean {
-
         val pageIndex = when (id) {
             RECIPE_MORE_NEXT_BUTTON_ID -> getRecipePageIndex() + 1
             RECIPE_MORE_PREV_BUTTON_ID -> getRecipePageIndex() - 1
@@ -81,12 +80,7 @@ class ResetTableScreenHandler(
         }
         setRecipePageIndex(pageIndex)
 
-        val world = player?.world ?: return false
-        val result = ResetTableTool.findCraftingMaterial(world, getResetItemStack())
-        result
-            ?.getOrNull(pageIndex)
-            ?.recipePatternFormattedList
-            ?.forEachIndexed { index, itemStack -> inventory.setStack(index, itemStack) }
+        (inventory as? ResetTableEntity)?.updateResultItems()
 
         return true
     }
