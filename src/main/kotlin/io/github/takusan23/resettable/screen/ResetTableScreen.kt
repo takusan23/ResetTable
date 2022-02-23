@@ -1,10 +1,7 @@
 package io.github.takusan23.resettable.screen
 
 import com.mojang.blaze3d.systems.RenderSystem
-import io.github.takusan23.resettable.network.ResetTableNetworks
 import io.github.takusan23.resettable.tool.ResetTableTool
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
 import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.client.gui.widget.ButtonWidget
 import net.minecraft.client.render.GameRenderer
@@ -16,8 +13,14 @@ import net.minecraft.util.Identifier
 
 /**
  * 実際に描画するGUIのためのクラス
+ *
+ * [handler]はgetterは動くけど、setter系はまじで動かない。
  * */
-class ResetTableScreen(private val resetTableScreenHandler: ResetTableScreenHandler?, private val inventory: PlayerInventory?, title: Text?) : HandledScreen<ResetTableScreenHandler>(resetTableScreenHandler, inventory, title) {
+class ResetTableScreen(
+    private val resetTableScreenHandler: ResetTableScreenHandler?,
+    private val inventory: PlayerInventory?,
+    title: Text?,
+) : HandledScreen<ResetTableScreenHandler>(resetTableScreenHandler, inventory, title) {
     private val TEXTURE = Identifier("resettable", "textures/gui/reset_table_gui.png")
 
     /** 還元スロットのX座標 */
@@ -28,8 +31,6 @@ class ResetTableScreen(private val resetTableScreenHandler: ResetTableScreenHand
 
     /** 青色 */
     private val COLOR_BLUE = 0x0000FF
-
-    private var pageIndex = 0
 
     override fun drawBackground(matrices: MatrixStack?, delta: Float, mouseX: Int, mouseY: Int) {
         RenderSystem.setShader { GameRenderer.getPositionTexShader() }
@@ -48,9 +49,11 @@ class ResetTableScreen(private val resetTableScreenHandler: ResetTableScreenHand
         if (verify != null) {
             // 文字と色を解決
             val textColorPair = if (verify != ResetTableTool.VerifyResult.SUCCESS) {
+                // 失敗時はエラー文言を解決する
                 ResetTableTool.resolveUserDescription(verify)
             } else {
-                "${pageIndex}" to COLOR_BLUE
+                // 成功時はレシピ切り替え番号を
+                "${resetTableScreenHandler?.getRecipePageIndex()}" to COLOR_BLUE
             } ?: return
             textRenderer.draw(
                 matrices,
@@ -72,25 +75,26 @@ class ResetTableScreen(private val resetTableScreenHandler: ResetTableScreenHand
         super.init()
         // 真ん中にGUIタイトルを表示させるため
         titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2
+
         // 前のレシピボタン
-        addDrawableChild(ButtonWidget(x + resetSlotPosX - 10, 100, 10, 10, Text.of("<")) {
-            sendServer(pageIndex--)
+        addDrawableChild(ButtonWidget(x + resetSlotPosX - 10, y + 58, 10, 10, Text.of("<")) {
+            /** ボタンを押したことを [ResetTableScreenHandler] へ通知する */
+            client?.interactionManager?.clickButton(handler.syncId, RECIPE_MORE_PREV_BUTTON_ID)
         })
         // 次のレシピボタン
-        addDrawableChild(ButtonWidget(x + resetSlotPosX + slotWidth, 100, 10, 10, Text.of(">")) {
-            sendServer(pageIndex++)
+        addDrawableChild(ButtonWidget(x + resetSlotPosX + slotWidth, y + 58, 10, 10, Text.of(">")) {
+            client?.interactionManager?.clickButton(handler.syncId, RECIPE_MORE_NEXT_BUTTON_ID)
         })
     }
 
-    /**
-     * サーバー側へレシピ切り替え番号変更を通知する
-     * */
-    private fun sendServer(size: Int) {
-        // データを詰めた順番は受け取る側でも同じ
-        val buf = PacketByteBufs.create().also {
-            it.writeInt(size)
-        }
-        ClientPlayNetworking.send(ResetTableNetworks.SEND_RECIPE_INDEX_CHANGE, buf)
+    companion object{
+
+        /** < -1 ボタンを押したときのid */
+        const val RECIPE_MORE_NEXT_BUTTON_ID = 1
+
+        /** > +1 ボタンを押したときのid */
+        const val RECIPE_MORE_PREV_BUTTON_ID = 2
+
     }
 
 }

@@ -1,10 +1,9 @@
 package io.github.takusan23.resettable.entity
 
-import io.github.takusan23.resettable.network.ResetTableNetworks
+import io.github.takusan23.resettable.screen.ResetTableScreen
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
-import io.github.takusan23.resettable.tool.ResetTableTool
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
@@ -13,8 +12,11 @@ import net.minecraft.inventory.Inventories
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NbtCompound
+import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.NamedScreenHandlerFactory
+import net.minecraft.screen.PropertyDelegate
 import net.minecraft.screen.ScreenHandler
+import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.collection.DefaultedList
@@ -35,7 +37,7 @@ import net.minecraft.util.math.Direction
 class ResetTableEntity(
     pos: BlockPos,
     state: BlockState,
-) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), NamedScreenHandlerFactory, ImplementedInventory, SidedInventory {
+) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), NamedScreenHandlerFactory, ExtendedScreenHandlerFactory, ImplementedInventory, SidedInventory {
 
     /**
      * リセットテーブルのインベントリ
@@ -51,19 +53,24 @@ class ResetTableEntity(
     private var currentRecipeResolveDataList: List<RecipeResolveData>? = null
 
     /** 還元スロットに入っているアイテム */
-    private var currentResetSlotItemStack = ItemStack.EMPTY
+    var currentResetSlotItemStack = ItemStack.EMPTY
+        private set
 
     /** 複数あった場合にレシピを切り替えるための */
     private var pageIndex = 0
 
-    init {
-        /**
-         * クライアント側のGUI操作が行われた際にサーバー側へ通知が来るのでここで受け取る
-         * */
-        ServerPlayNetworking.registerGlobalReceiver(ResetTableNetworks.SEND_RECIPE_INDEX_CHANGE) { server, player, handler, buf, responseSender ->
-            pageIndex = buf.getInt(0)
-            println("トータルサイズ：${ResetTableTool.findCraftingMaterial(world!!, currentResetSlotItemStack)?.size} / Index：$pageIndex")
-            updateResultItems()
+    /** [ResetTableScreen]と[ResetTableEntity]の中で[pageIndex]を同期させる */
+    private val delegate = object : PropertyDelegate {
+        override fun get(index: Int): Int {
+            return pageIndex
+        }
+
+        override fun set(index: Int, value: Int) {
+            pageIndex = value
+        }
+
+        override fun size(): Int {
+            return 1
         }
     }
 
@@ -78,7 +85,7 @@ class ResetTableEntity(
 
     /** GUIを返す？ */
     override fun createMenu(syncId: Int, playerInventory: PlayerInventory, player: PlayerEntity?): ScreenHandler {
-        return ResetTableScreenHandler(syncId, playerInventory, this)
+        return ResetTableScreenHandler(syncId, playerInventory, this, delegate)
     }
 
     /** ホッパー等からアクセスできるスロットを返す */
@@ -122,6 +129,18 @@ class ResetTableEntity(
     }
 
     /**
+     * サーバー側で呼ばれる。
+     *
+     * クライアントに贈りたいデータをここで詰めておく。
+     * */
+    override fun writeScreenOpeningData(player: ServerPlayerEntity?, buf: PacketByteBuf?) {
+        buf?.apply {
+            // クライアント側（GUI）でブロックの位置を知りたいので渡しておく
+            writeBlockPos(pos)
+        }
+    }
+
+    /**
      * 多分アイテムを入れたりしたときに呼ばれる
      *
      * ここでレシピ検索をしている
@@ -133,9 +152,12 @@ class ResetTableEntity(
 
     /** いまの還元スロットに入っているアイテムのレシピを探して、材料スロット（3x3）に入れる */
     private fun updateResult() {
+
         val nonNullWorld = world ?: return
         val resetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
+        currentResetSlotItemStack = resetSlotItemStack
 
+/*
         // 作るのに必要なアイテムを取得する
         // 還元スロットのアイテムが変わっていたら再計算
         if (ItemStack.areItemsEqual(currentResetSlotItemStack, resetSlotItemStack)) {
@@ -146,8 +168,9 @@ class ResetTableEntity(
         if (isMaterialSlotEmpty()) {
             updateResultItems()
         }
+*/
 
-        currentResetSlotItemStack = resetSlotItemStack
+
     }
 
     fun updateResultItems() {
@@ -158,7 +181,7 @@ class ResetTableEntity(
         currentRecipeResolveDataList
             ?.getOrNull(pageIndex)
             ?.resolveSlotItemStack
-            ?.also { setStack(RESET_TABLE_RESET_ITEM_SLOT, it) }
+        //  ?.also { setStack(RESET_TABLE_RESET_ITEM_SLOT, it) }
     }
 
     /**
@@ -175,7 +198,7 @@ class ResetTableEntity(
      *
      * @return 3x3 のスロットが空っぽならtrue
      * */
-    private fun isMaterialSlotEmpty(): Boolean {
+    fun isMaterialSlotEmpty(): Boolean {
         return (0..8).map { getStack(it) }.all { it.isEmpty }
     }
 

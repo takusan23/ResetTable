@@ -1,7 +1,7 @@
 package io.github.takusan23.resettable
 
-import io.github.takusan23.resettable.screen.ResetTableScreenHandlers
 import io.github.takusan23.resettable.screen.ResetTableScreen
+import io.github.takusan23.resettable.screen.ResetTableScreenHandlers
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
 
 /**
@@ -13,7 +13,7 @@ import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
 fun clientSideInit() {
 
     /** クライアント側のみGUIの画面をFabricに登録する */
-    ScreenRegistry.register(
-        ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER
-    ) { handler, inventory, title -> ResetTableScreen(handler, inventory, title) }
+    ScreenRegistry.register(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER) { handler, inventory, title ->
+        ResetTableScreen(handler, inventory, title)
+    }
 }

@@ -1,29 +1,55 @@
 package io.github.takusan23.resettable.screen
 
+import io.github.takusan23.resettable.entity.ResetTableEntity
 import io.github.takusan23.resettable.entity.ResetTableEntity.Companion.RESET_TABLE_RESET_ITEM_SLOT
+import io.github.takusan23.resettable.screen.ResetTableScreen.Companion.RECIPE_MORE_NEXT_BUTTON_ID
+import io.github.takusan23.resettable.screen.ResetTableScreen.Companion.RECIPE_MORE_PREV_BUTTON_ID
 import io.github.takusan23.resettable.tool.ResetTableTool
+import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.inventory.Inventory
 import net.minecraft.inventory.SimpleInventory
 import net.minecraft.item.ItemStack
+import net.minecraft.network.PacketByteBuf
+import net.minecraft.screen.ArrayPropertyDelegate
+import net.minecraft.screen.PropertyDelegate
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.Slot
+import net.minecraft.util.math.BlockPos
 
 /**
  * クライアントとサーバーでGUIの状態を同期させるのに必要なクラス
+ *
+ * @param propertyDelegate 整数値？を[ResetTableEntity]と同期するために必要
+ * @param inventory [ResetTableEntity]にあるやつを渡して
  * */
 class ResetTableScreenHandler(
     syncId: Int,
     private val playerInventory: PlayerInventory,
     private val inventory: Inventory = SimpleInventory(10),
+    private val propertyDelegate: PropertyDelegate = ArrayPropertyDelegate(1),
 ) : ScreenHandler(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER, syncId) {
-    private val player = playerInventory.player
-    private val world = player.world
+
+    /** 開いてるGUIがあるEntityのブロックの位置 */
+    var blockPos = BlockPos.ORIGIN!!
+        private set
+
+    /**
+     * クライアント側で呼ばれるコンストラクター
+     *
+     * 登録の際は [ScreenHandlerRegistry.registerExtended] を使う
+     * */
+    constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf) : this(syncId, playerInventory) {
+        blockPos = buf.readBlockPos()
+    }
 
     init {
         // インベントリのGUIを開く
         inventory.onOpen(playerInventory.player)
+
+        // スクリーンハンドラーにPropertyDelegateが存在しますよ～？って通知しないと同期されない
+        addProperties(propertyDelegate)
 
         // 完成品スロット
         addSlot(Slot(inventory, 9, 124, 35))
@@ -44,6 +70,25 @@ class ResetTableScreenHandler(
         repeat(9) { m ->
             addSlot(Slot(playerInventory, m, 8 + m * 18, 142))
         }
+    }
+
+    override fun onButtonClick(player: PlayerEntity?, id: Int): Boolean {
+
+        val pageIndex = when (id) {
+            RECIPE_MORE_NEXT_BUTTON_ID -> getRecipePageIndex() + 1
+            RECIPE_MORE_PREV_BUTTON_ID -> getRecipePageIndex() - 1
+            else -> return false
+        }
+        setRecipePageIndex(pageIndex)
+
+        val world = player?.world ?: return false
+        val result = ResetTableTool.findCraftingMaterial(world, getResetItemStack())
+        result
+            ?.getOrNull(pageIndex)
+            ?.recipePatternFormattedList
+            ?.forEachIndexed { index, itemStack -> inventory.setStack(index, itemStack) }
+
+        return true
     }
 
     /** よくわからｎ */
@@ -85,7 +130,25 @@ class ResetTableScreenHandler(
      * @return [ResetTableTool.VerifyResult]
      * */
     fun verifyResultItem(): ResetTableTool.VerifyResult {
-        return ResetTableTool.verifyResultItemRecipe(world, getResetItemStack())
+        return ResetTableTool.verifyResultItemRecipe(playerInventory.player.world, getResetItemStack())
+    }
+
+    /**
+     * ページ切り替え番号を取得する
+     *
+     * @return 何ページ目か
+     * */
+    fun getRecipePageIndex(): Int {
+        return propertyDelegate.get(0)
+    }
+
+    /**
+     * ページ切り替え番号を登録する
+     *
+     * @param index 何ページ目か
+     * */
+    private fun setRecipePageIndex(index: Int) {
+        propertyDelegate.set(0, index)
     }
 
     /**
