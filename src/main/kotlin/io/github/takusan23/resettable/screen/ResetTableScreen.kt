@@ -1,6 +1,7 @@
 package io.github.takusan23.resettable.screen
 
 import com.mojang.blaze3d.systems.RenderSystem
+import io.github.takusan23.resettable.entity.ResetTableEntity
 import io.github.takusan23.resettable.tool.ResetTableTool
 import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.client.gui.widget.ButtonWidget
@@ -18,7 +19,7 @@ import net.minecraft.util.Identifier
  * */
 class ResetTableScreen(
     private val resetTableScreenHandler: ResetTableScreenHandler?,
-    private val inventory: PlayerInventory?,
+    inventory: PlayerInventory?,
     title: Text?,
 ) : HandledScreen<ResetTableScreenHandler>(resetTableScreenHandler, inventory, title) {
     private val TEXTURE = Identifier("resettable", "textures/gui/reset_table_gui.png")
@@ -31,6 +32,21 @@ class ResetTableScreen(
 
     /** 青色 */
     private val COLOR_BLUE = 0x0000FF
+
+    /** 戻るボタン */
+    private val prevButton by lazy {
+        ButtonWidget(x + resetSlotPosX - 10, y + 58, 10, 10, Text.of("<")) {
+            /** ボタンを押したことを [ResetTableScreenHandler] へ通知する */
+            client?.interactionManager?.clickButton(handler.syncId, RECIPE_MORE_PREV_BUTTON_ID)
+        }
+    }
+
+    /** 次ボタン */
+    private val nextButton by lazy {
+        ButtonWidget(x + resetSlotPosX + slotWidth, y + 58, 10, 10, Text.of(">")) {
+            client?.interactionManager?.clickButton(handler.syncId, RECIPE_MORE_NEXT_BUTTON_ID)
+        }
+    }
 
     override fun drawBackground(matrices: MatrixStack?, delta: Float, mouseX: Int, mouseY: Int) {
         RenderSystem.setShader { GameRenderer.getPositionTexShader() }
@@ -48,13 +64,23 @@ class ResetTableScreen(
         val verify = resetTableScreenHandler?.verifyResultItem()
         if (verify != null) {
             // 文字と色を解決
-            val textColorPair = if (verify != ResetTableTool.VerifyResult.SUCCESS) {
+            val textColorPair: Pair<String, Int>
+            if (verify != ResetTableTool.VerifyResult.SUCCESS) {
+                // ボタンを消す
+                prevButton.visible = false
+                nextButton.visible = false
                 // 失敗時はエラー文言を解決する
-                ResetTableTool.resolveUserDescription(verify)
+                textColorPair = ResetTableTool.resolveUserDescription(verify) ?: return
             } else {
+                val pageIndex = (resetTableScreenHandler?.propertyDelegate?.get(ResetTableEntity.DelegatePropertyKeys.PAGE_INDEX.index) ?: 0) + 1 // 0スタートなので+1する
+                val recipePatternCount = resetTableScreenHandler?.getRecipePatternCount()!!
+                // ボタンを出す
+                prevButton.visible = true
+                nextButton.visible = true
                 // 成功時はレシピ切り替え番号を
-                "${resetTableScreenHandler?.propertyDelegate?.get(1)}/${resetTableScreenHandler?.getRecipePatternCount() ?: -1}" to COLOR_BLUE
-            } ?: return
+                textColorPair = "$pageIndex/$recipePatternCount" to COLOR_BLUE
+            }
+            // テキスト描画
             textRenderer.draw(
                 matrices,
                 textColorPair.first,
@@ -76,15 +102,9 @@ class ResetTableScreen(
         // 真ん中にGUIタイトルを表示させるため
         titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2
 
-        // 前のレシピボタン
-        addDrawableChild(ButtonWidget(x + resetSlotPosX - 10, y + 58, 10, 10, Text.of("<")) {
-            /** ボタンを押したことを [ResetTableScreenHandler] へ通知する */
-            client?.interactionManager?.clickButton(handler.syncId, RECIPE_MORE_PREV_BUTTON_ID)
-        })
-        // 次のレシピボタン
-        addDrawableChild(ButtonWidget(x + resetSlotPosX + slotWidth, y + 58, 10, 10, Text.of(">")) {
-            client?.interactionManager?.clickButton(handler.syncId, RECIPE_MORE_NEXT_BUTTON_ID)
-        })
+        // ボタンを追加
+        addDrawableChild(prevButton)
+        addDrawableChild(nextButton)
     }
 
     companion object {

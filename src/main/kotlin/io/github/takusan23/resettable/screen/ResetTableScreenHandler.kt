@@ -17,18 +17,19 @@ import net.minecraft.screen.PropertyDelegate
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.Slot
 import net.minecraft.util.math.BlockPos
+import kotlin.math.min
 
 /**
  * クライアントとサーバーでGUIの状態を同期させるのに必要なクラス
  *
- * @param propertyDelegate 整数値？を[ResetTableEntity]と同期するために必要
+ * @param propertyDelegate 整数値？を[ResetTableEntity]とレシピのページ番号を同期させるので使う
  * @param inventory [ResetTableEntity]にあるやつを渡して
  * */
 class ResetTableScreenHandler(
     syncId: Int,
     private val playerInventory: PlayerInventory,
     private val inventory: Inventory = SimpleInventory(10),
-    val propertyDelegate: PropertyDelegate = ArrayPropertyDelegate(3),
+    val propertyDelegate: PropertyDelegate = ArrayPropertyDelegate(ResetTableEntity.DelegatePropertyKeys.getPropertyKeySize()),
 ) : ScreenHandler(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER, syncId) {
 
     /** 開いてるGUIがあるEntityのブロックの位置 */
@@ -72,16 +73,24 @@ class ResetTableScreenHandler(
         }
     }
 
+    /**
+     * GUIでボタンを押したときに呼ばれる
+     *
+     * @param id 今回は[ResetTableScreen.RECIPE_MORE_NEXT_BUTTON_ID]とか
+     * */
     override fun onButtonClick(player: PlayerEntity?, id: Int): Boolean {
+        val currentValue = propertyDelegate.get(ResetTableEntity.DelegatePropertyKeys.PAGE_INDEX.index)
+        val pageCount = getRecipePatternCount() ?: 0
         val pageIndex = when (id) {
-            RECIPE_MORE_NEXT_BUTTON_ID -> propertyDelegate.get(1) + 1
-            RECIPE_MORE_PREV_BUTTON_ID -> propertyDelegate.get(1) - 1
+            RECIPE_MORE_NEXT_BUTTON_ID -> currentValue + 1
+            RECIPE_MORE_PREV_BUTTON_ID -> currentValue - 1
             else -> return false
         }
-        propertyDelegate.set(1, pageIndex)
-
+        // 範囲外対策
+        if (pageIndex in 0 until pageCount) {
+            propertyDelegate.set(ResetTableEntity.DelegatePropertyKeys.PAGE_INDEX.index, min(pageIndex, getRecipePatternCount() ?: 0))
+        }
         (inventory as? ResetTableEntity)?.updateResultItems()
-
         return true
     }
 
@@ -127,18 +136,14 @@ class ResetTableScreenHandler(
         return ResetTableTool.verifyResultItemRecipe(playerInventory.player.world, getResetItemStack())
     }
 
+    /**
+     * レシピのパターンが何種類あるか返す
+     *
+     * @return パターン数。レシピが解決できない場合はnull
+     * */
     fun getRecipePatternCount(): Int? {
         val world = playerInventory.player.world
         return ResetTableTool.findCraftingMaterial(world, getResetItemStack())?.size
-    }
-
-    /**
-     * ページ切り替え番号を登録する
-     *
-     * @param index 何ページ目か
-     * */
-    private fun setRecipePageIndex(index: Int) {
-        propertyDelegate.set(0, index)
     }
 
     /**

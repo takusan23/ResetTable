@@ -1,6 +1,5 @@
 package io.github.takusan23.resettable.entity
 
-import io.github.takusan23.resettable.screen.ResetTableScreen
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import io.github.takusan23.resettable.tool.ResetTableTool
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
@@ -60,28 +59,23 @@ class ResetTableEntity(
     /** 複数あった場合にレシピを切り替えるための */
     private var pageIndex = 0
 
-    /** 複数あった場合のレシピの種類 */
-    private var recipePatternCount = 0
-
-    /** [ResetTableScreen]と[ResetTableEntity]の中で[pageIndex]を同期させる */
+    /** [ResetTableScreenHandler]と[ResetTableEntity]の中で[pageIndex]を同期させる */
     private val propertyDelegate = object : PropertyDelegate {
         override fun get(index: Int): Int {
             return when (index) {
-                1 -> pageIndex
-                2 -> recipePatternCount
+                DelegatePropertyKeys.PAGE_INDEX.index -> pageIndex
                 else -> 0
             }
         }
 
         override fun set(index: Int, value: Int) {
             when (index) {
-                1 -> pageIndex = value
-                2 -> recipePatternCount = value
+                DelegatePropertyKeys.PAGE_INDEX.index -> pageIndex = value
             }
         }
 
         override fun size(): Int {
-            return 2
+            return DelegatePropertyKeys.getPropertyKeySize()
         }
     }
 
@@ -190,8 +184,7 @@ class ResetTableEntity(
 
         val world = world ?: return
         currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(world, currentResetSlotItemStack)
-        propertyDelegate.set(2, currentRecipeResolveDataList?.size ?: 0)
-        val pageIndex = propertyDelegate.get(1)
+        val pageIndex = getRecipePageIndex()
         currentRecipeResolveDataList
             ?.getOrNull(pageIndex)
             ?.recipePatternFormattedList
@@ -240,6 +233,33 @@ class ResetTableEntity(
         return list1.mapIndexed { index, itemStack -> ItemStack.areEqual(list2[index], itemStack) }.all { it }
     }
 
+    /**
+     * 現在のレシピ番号を返す
+     *
+     * @return レシピ番号
+     * */
+    private fun getRecipePageIndex(): Int {
+        return propertyDelegate.get(DelegatePropertyKeys.PAGE_INDEX.index)
+    }
+
+    /**
+     * [PropertyDelegate]で使うキー代わり。[index]をキー代わりにする
+     * */
+    enum class DelegatePropertyKeys {
+        /** ページ切り替え番号 */
+        PAGE_INDEX;
+
+        /** 整数値を返す */
+        val index: Int
+            get() = this.ordinal
+
+        companion object {
+            /** [DelegatePropertyKeys]が何個あるか返す */
+            fun getPropertyKeySize(): Int {
+                return values().size
+            }
+        }
+    }
 
     companion object {
 
