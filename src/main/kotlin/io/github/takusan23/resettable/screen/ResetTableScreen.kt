@@ -53,7 +53,7 @@ class ResetTableScreen(
                 ResetTableTool.resolveUserDescription(verify)
             } else {
                 // 成功時はレシピ切り替え番号を
-                "${resetTableScreenHandler?.getRecipePageIndex()}" to COLOR_BLUE
+                "${resetTableScreenHandler?.propertyDelegate?.get(1)}/${resetTableScreenHandler?.getRecipePatternCount() ?: -1}" to COLOR_BLUE
             } ?: return
             textRenderer.draw(
                 matrices,
@@ -87,7 +87,7 @@ class ResetTableScreen(
         })
     }
 
-    companion object{
+    companion object {
 
         /** < -1 ボタンを押したときのid */
         const val RECIPE_MORE_NEXT_BUTTON_ID = 1

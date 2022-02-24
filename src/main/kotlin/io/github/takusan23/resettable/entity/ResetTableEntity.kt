@@ -60,18 +60,28 @@ class ResetTableEntity(
     /** 複数あった場合にレシピを切り替えるための */
     private var pageIndex = 0
 
+    /** 複数あった場合のレシピの種類 */
+    private var recipePatternCount = 0
+
     /** [ResetTableScreen]と[ResetTableEntity]の中で[pageIndex]を同期させる */
-    private val delegate = object : PropertyDelegate {
+    private val propertyDelegate = object : PropertyDelegate {
         override fun get(index: Int): Int {
-            return pageIndex
+            return when (index) {
+                1 -> pageIndex
+                2 -> recipePatternCount
+                else -> 0
+            }
         }
 
         override fun set(index: Int, value: Int) {
-            pageIndex = value
+            when (index) {
+                1 -> pageIndex = value
+                2 -> recipePatternCount = value
+            }
         }
 
         override fun size(): Int {
-            return 1
+            return 2
         }
     }
 
@@ -86,7 +96,7 @@ class ResetTableEntity(
 
     /** GUIを返す？ */
     override fun createMenu(syncId: Int, playerInventory: PlayerInventory, player: PlayerEntity?): ScreenHandler {
-        return ResetTableScreenHandler(syncId, playerInventory, this, delegate)
+        return ResetTableScreenHandler(syncId, playerInventory, this, propertyDelegate)
     }
 
     /** ホッパー等からアクセスできるスロットを返す */
@@ -180,7 +190,8 @@ class ResetTableEntity(
 
         val world = world ?: return
         currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(world, currentResetSlotItemStack)
-
+        propertyDelegate.set(2, currentRecipeResolveDataList?.size ?: 0)
+        val pageIndex = propertyDelegate.get(1)
         currentRecipeResolveDataList
             ?.getOrNull(pageIndex)
             ?.recipePatternFormattedList

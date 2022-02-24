@@ -28,7 +28,7 @@ class ResetTableScreenHandler(
     syncId: Int,
     private val playerInventory: PlayerInventory,
     private val inventory: Inventory = SimpleInventory(10),
-    private val propertyDelegate: PropertyDelegate = ArrayPropertyDelegate(1),
+    val propertyDelegate: PropertyDelegate = ArrayPropertyDelegate(3),
 ) : ScreenHandler(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER, syncId) {
 
     /** 開いてるGUIがあるEntityのブロックの位置 */
@@ -74,11 +74,11 @@ class ResetTableScreenHandler(
 
     override fun onButtonClick(player: PlayerEntity?, id: Int): Boolean {
         val pageIndex = when (id) {
-            RECIPE_MORE_NEXT_BUTTON_ID -> getRecipePageIndex() + 1
-            RECIPE_MORE_PREV_BUTTON_ID -> getRecipePageIndex() - 1
+            RECIPE_MORE_NEXT_BUTTON_ID -> propertyDelegate.get(1) + 1
+            RECIPE_MORE_PREV_BUTTON_ID -> propertyDelegate.get(1) - 1
             else -> return false
         }
-        setRecipePageIndex(pageIndex)
+        propertyDelegate.set(1, pageIndex)
 
         (inventory as? ResetTableEntity)?.updateResultItems()
 
@@ -127,13 +127,9 @@ class ResetTableScreenHandler(
         return ResetTableTool.verifyResultItemRecipe(playerInventory.player.world, getResetItemStack())
     }
 
-    /**
-     * ページ切り替え番号を取得する
-     *
-     * @return 何ページ目か
-     * */
-    fun getRecipePageIndex(): Int {
-        return propertyDelegate.get(0)
+    fun getRecipePatternCount(): Int? {
+        val world = playerInventory.player.world
+        return ResetTableTool.findCraftingMaterial(world, getResetItemStack())?.size
     }
 
     /**
