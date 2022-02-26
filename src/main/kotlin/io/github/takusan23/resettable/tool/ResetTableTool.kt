@@ -44,6 +44,22 @@ object ResetTableTool {
     }
 
     /**
+     * レシピを探して返す。アイテム数があってるかとかは見ていない
+     *
+     * @param world レシピもらうのに使う
+     * @param resetItemStack 探すアイテム
+     * @return レシピの配列
+     * */
+    private fun findRecipe(world: World, resetItemStack: ItemStack): List<CraftingRecipe> {
+        val recipeManager = world.recipeManager.values()
+        // クラフトレシピを完成品から探す
+        return recipeManager
+            .filter { it.output.item == resetItemStack.item }
+            // 作業台だけ
+            .filterIsInstance<CraftingRecipe>()
+    }
+
+    /**
      * 引数のアイテムがちゃんと戻せるか確認する関数
      *
      * @param world レシピを取得するのに使う
@@ -51,19 +67,15 @@ object ResetTableTool {
      * @return [VerifyResult]
      * */
     fun verifyResultItemRecipe(world: World, resultItemStack: ItemStack): VerifyResult {
-        val recipeManager = world.recipeManager.values()
-        val materials = recipeManager
-            // 作業台だけ
-            .mapNotNull { it as? CraftingRecipe }
-            // アイテムを確認する
-            .find { it.output.item == resultItemStack.item }
+        val recipeList = findRecipe(world, resultItemStack)
+        val availableRecipe = recipeList.firstOrNull { it.output.count <= resultItemStack.count }
 
         return when {
             resultItemStack == ItemStack.EMPTY -> VerifyResult.ERROR_EMPTY_ITEM_STACK
+            recipeList.isEmpty() -> VerifyResult.ERROR_NOT_FOUND_RECIPE
             resultItemStack.isDamaged -> VerifyResult.ERROR_ITEM_DAMAGED
             EnchantmentHelper.get(resultItemStack).isNotEmpty() -> VerifyResult.ERROR_ENCHANTED_ITEM
-            materials == null -> VerifyResult.ERROR_NOT_FOUND_RECIPE
-            materials.output!!.count > resultItemStack.count -> VerifyResult.ERROR_REQUIRE_STACK_COUNT
+            availableRecipe == null -> VerifyResult.ERROR_REQUIRE_STACK_COUNT
             else -> VerifyResult.SUCCESS
         }
     }
@@ -79,14 +91,11 @@ object ResetTableTool {
         // 検証した結果もとに戻せない場合はnullを返す
         if (verifyResultItemRecipe(world, resetItemStack) != VerifyResult.SUCCESS) return null
 
-        val recipeManager = world.recipeManager.values()
         // クラフトレシピを完成品から探す
-        val recipeList = recipeManager
+        val recipeList = findRecipe(world, resetItemStack)
             // アイテムとスタック数を確認する
             // 同じ完成品のレシピで複数返す場合に備えて
             .filter { it.output.item == resetItemStack.item && it.output.count <= resetItemStack.count }
-            // 作業台だけ
-            .filterIsInstance<CraftingRecipe>()
 
         val recipeResolvedDataList = recipeList.map { recipe ->
             val resetItemStackCount = resetItemStack.count

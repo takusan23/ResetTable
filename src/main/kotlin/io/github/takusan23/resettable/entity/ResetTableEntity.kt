@@ -52,6 +52,8 @@ class ResetTableEntity(
     /** 還元スロットに入れたアイテムのレシピ検索結果 */
     private var currentRecipeResolveDataList: List<RecipeResolveData>? = null
 
+    private val prevMaterialSlotItemList = mutableListOf<ItemStack>()
+
     /** 還元スロットに入っているアイテム */
     var currentResetSlotItemStack = ItemStack.EMPTY
         private set
@@ -161,9 +163,11 @@ class ResetTableEntity(
         val resetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
         currentResetSlotItemStack = resetSlotItemStack
 
-        if (isMaterialSlotEmpty()) {
-            updateResultItems()
-        }
+        updateResultItems()
+
+        prevMaterialSlotItemList.clear()
+        prevMaterialSlotItemList.addAll(getMaterialSlotItemStackList())
+
 /*
         // 作るのに必要なアイテムを取得する
         // 還元スロットのアイテムが変わっていたら再計算
@@ -180,19 +184,34 @@ class ResetTableEntity(
 
     }
 
-    fun updateResultItems() {
-
+    private fun updateResultItems() {
         val world = world ?: return
         currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(world, currentResetSlotItemStack)
-        val pageIndex = getRecipePageIndex()
-        currentRecipeResolveDataList
-            ?.getOrNull(pageIndex)
-            ?.recipePatternFormattedList
-            ?.forEachIndexed { index, itemStack -> setStack(index, itemStack) }
-        currentRecipeResolveDataList
-            ?.getOrNull(pageIndex)
-            ?.resolveSlotItemStack
-        //  ?.also { setStack(RESET_TABLE_RESET_ITEM_SLOT, it) }
+        if (isMaterialSlotEmpty()) {
+            currentRecipeResolveDataList
+                ?.getOrNull(0)
+                ?.also { recipeResolveData ->
+                    recipeResolveData
+                        .recipePatternFormattedList
+                        .forEachIndexed { index, itemStack -> setStack(index, itemStack) }
+                    recipeResolveData
+                        .resolveSlotItemStack
+                        .also { setStack(RESET_TABLE_RESET_ITEM_SLOT, it) }
+                }
+        } else {
+            // スロット空いてないけど、今のスロットと同じ中身だった場合
+            currentRecipeResolveDataList
+                ?.firstOrNull { recipeResolveData ->
+                    isEqualItemByItemStackList(getMaterialSlotItemStackList(), recipeResolveData.recipePatternFormattedList)
+                }?.also { recipeResolveData ->
+                    // アイテム数を増やす
+                    getMaterialSlotItemStackList()
+                        .map { it.copy().apply { count += recipeResolveData.recipePatternFormattedList[0].count } }
+                        .forEachIndexed { index, itemStack -> setStack(index, itemStack) }
+                    // 割り切れなかったアイテムを還元スロットへ
+                    setStack(RESET_TABLE_RESET_ITEM_SLOT, recipeResolveData.resolveSlotItemStack)
+                }
+        }
     }
 
     /**
@@ -200,6 +219,7 @@ class ResetTableEntity(
      *
      * @param callback アイテム変更時に呼ばれる関数
      * */
+    @Suppress("unused")
     fun addItemChangeCallback(callback: () -> Unit) {
         itemChangeCallbackList.add(callback)
     }
@@ -209,7 +229,7 @@ class ResetTableEntity(
      *
      * @return 3x3 のスロットが空っぽならtrue
      * */
-    fun isMaterialSlotEmpty(): Boolean {
+    private fun isMaterialSlotEmpty(): Boolean {
         return (0..8).map { getStack(it) }.all { it.isEmpty }
     }
 
@@ -218,19 +238,23 @@ class ResetTableEntity(
      *
      * @return 3x3 のアイテムスロット
      * */
-    private fun getRecipePatternSlotItemList(): List<ItemStack> {
+    private fun getMaterialSlotItemStackList(): List<ItemStack> {
         return (0..8).map { getStack(it) }
     }
 
     /**
-     * ２つのItemStackの配列を見て中身が同じかどうか
+     * 2つのItemStack配列を見て、同じアイテムが入っている場合はtrue。スタック数等は見ていない
      *
      * @param list1 ItemStackの配列
      * @param list2 ItemStackの配列
      * @return 同じ場合はtrue
      * */
-    private fun isEqualItemStackList(list1: List<ItemStack>, list2: List<ItemStack>): Boolean {
-        return list1.mapIndexed { index, itemStack -> ItemStack.areEqual(list2[index], itemStack) }.all { it }
+    private fun isEqualItemByItemStackList(list1: List<ItemStack>, list2: List<ItemStack>): Boolean {
+        return (0..kotlin.math.max(list1.size, list2.size)).map { index ->
+            val list1Item = list1.getOrNull(index) ?: ItemStack.EMPTY
+            val list2Item = list2.getOrNull(index) ?: ItemStack.EMPTY
+            list1Item.item == list2Item.item
+        }.all { it }
     }
 
     /**

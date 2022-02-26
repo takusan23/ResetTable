@@ -90,7 +90,8 @@ class ResetTableScreenHandler(
         if (pageIndex in 0 until pageCount) {
             propertyDelegate.set(ResetTableEntity.DelegatePropertyKeys.PAGE_INDEX.index, min(pageIndex, getRecipePatternCount() ?: 0))
         }
-        (inventory as? ResetTableEntity)?.updateResultItems()
+        // アイテムを還元スロットへ反映させる
+        // (inventory as? ResetTableEntity)?.updateResultItems()
         return true
     }
 
