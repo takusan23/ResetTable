@@ -2,6 +2,7 @@ package io.github.takusan23.resettable.tool
 
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.minecraft.enchantment.EnchantmentHelper
+import net.minecraft.item.BlockItem
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
 import net.minecraft.recipe.ShapedRecipe
@@ -39,7 +40,7 @@ object ResetTableTool {
         /** エンチャント済みの道具はおそらくもとに戻さないだろう */
         ERROR_ENCHANTED_ITEM("gui.resettable.error_enchanted_item", COLOR_RED),
 
-        /** シュルカーボックス等メタデータがついているアイテムは戻せないように */
+        /** シュルカーボックスなんかのアイテムは戻せないように */
         ERROR_HAS_METADATA("gui.resettable.error_has_metadata", COLOR_RED),
 
         /** 戻せる */
@@ -79,7 +80,7 @@ object ResetTableTool {
             resultItemStack.isDamaged -> VerifyResult.ERROR_ITEM_DAMAGED
             EnchantmentHelper.get(resultItemStack).isNotEmpty() -> VerifyResult.ERROR_ENCHANTED_ITEM
             availableRecipe == null -> VerifyResult.ERROR_REQUIRE_STACK_COUNT
-            resultItemStack.hasNbt() -> VerifyResult.ERROR_HAS_METADATA
+            BlockItem.getBlockEntityNbt(resultItemStack)?.isEmpty == false -> VerifyResult.ERROR_HAS_METADATA
             else -> VerifyResult.SUCCESS
         }
     }

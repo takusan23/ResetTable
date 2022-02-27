@@ -1,7 +1,14 @@
 # ResetTable
 
+![Imgur](https://imgur.com/BfpHj2r.gif)
+
+![Imgur](https://imgur.com/YXRxKIN.png)
+
 `RevereseCraft`のようなもの。間違えてクラフトしたときに戻せるテーブル。  
 久しぶりにMOD作りたくなったので。
+
+ホッパーで搬入、搬出機能もあります  
+![Imgur](https://imgur.com/eBSK2rK.png)
 
 # MOD導入方法
 
