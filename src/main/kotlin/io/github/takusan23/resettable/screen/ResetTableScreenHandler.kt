@@ -2,8 +2,6 @@ package io.github.takusan23.resettable.screen
 
 import io.github.takusan23.resettable.entity.ResetTableEntity
 import io.github.takusan23.resettable.entity.ResetTableEntity.Companion.RESET_TABLE_RESET_ITEM_SLOT
-import io.github.takusan23.resettable.screen.ResetTableScreen.Companion.RECIPE_MORE_NEXT_BUTTON_ID
-import io.github.takusan23.resettable.screen.ResetTableScreen.Companion.RECIPE_MORE_PREV_BUTTON_ID
 import io.github.takusan23.resettable.tool.ResetTableTool
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.entity.player.PlayerEntity
@@ -12,12 +10,9 @@ import net.minecraft.inventory.Inventory
 import net.minecraft.inventory.SimpleInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.network.PacketByteBuf
-import net.minecraft.screen.ArrayPropertyDelegate
-import net.minecraft.screen.PropertyDelegate
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.Slot
 import net.minecraft.util.math.BlockPos
-import kotlin.math.min
 
 /**
  * クライアントとサーバーでGUIの状態を同期させるのに必要なクラス
@@ -29,7 +24,6 @@ class ResetTableScreenHandler(
     syncId: Int,
     private val playerInventory: PlayerInventory,
     private val inventory: Inventory = SimpleInventory(10),
-    val propertyDelegate: PropertyDelegate = ArrayPropertyDelegate(ResetTableEntity.DelegatePropertyKeys.getPropertyKeySize()),
 ) : ScreenHandler(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER, syncId) {
 
     /** 開いてるGUIがあるEntityのブロックの位置 */
@@ -48,9 +42,6 @@ class ResetTableScreenHandler(
     init {
         // インベントリのGUIを開く
         inventory.onOpen(playerInventory.player)
-
-        // スクリーンハンドラーにPropertyDelegateが存在しますよ～？って通知しないと同期されない
-        addProperties(propertyDelegate)
 
         // 完成品スロット
         addSlot(Slot(inventory, 9, 124, 35))
@@ -71,28 +62,6 @@ class ResetTableScreenHandler(
         repeat(9) { m ->
             addSlot(Slot(playerInventory, m, 8 + m * 18, 142))
         }
-    }
-
-    /**
-     * GUIでボタンを押したときに呼ばれる
-     *
-     * @param id 今回は[ResetTableScreen.RECIPE_MORE_NEXT_BUTTON_ID]とか
-     * */
-    override fun onButtonClick(player: PlayerEntity?, id: Int): Boolean {
-        val currentValue = propertyDelegate.get(ResetTableEntity.DelegatePropertyKeys.PAGE_INDEX.index)
-        val pageCount = getRecipePatternCount() ?: 0
-        val pageIndex = when (id) {
-            RECIPE_MORE_NEXT_BUTTON_ID -> currentValue + 1
-            RECIPE_MORE_PREV_BUTTON_ID -> currentValue - 1
-            else -> return false
-        }
-        // 範囲外対策
-        if (pageIndex in 0 until pageCount) {
-            propertyDelegate.set(ResetTableEntity.DelegatePropertyKeys.PAGE_INDEX.index, min(pageIndex, getRecipePatternCount() ?: 0))
-        }
-        // アイテムを還元スロットへ反映させる
-        // (inventory as? ResetTableEntity)?.updateResultItems()
-        return true
     }
 
     /** よくわからｎ */

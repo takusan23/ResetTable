@@ -6,5 +6,6 @@
   "gui.resettable.error_not_found_recipe": "The recipe doesn't seem to exist",
   "gui.resettable.error_require_stack_count": "Not enough items",
   "gui.resettable.error_enchanted_item": "Enchanted items cannot be returned",
+  "gui.resettable.error_has_metadata": "Items with metadata cannot be returned",
   "gui.resettable.successful": "Can be restored"
 }

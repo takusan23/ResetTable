@@ -2,7 +2,6 @@ package io.github.takusan23.resettable.entity
 
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import io.github.takusan23.resettable.tool.ResetTableTool
-import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
@@ -49,38 +48,6 @@ class ResetTableEntity(
     /** アイテム変更コールバックの配列 */
     private val itemChangeCallbackList = mutableListOf<() -> Unit>()
 
-    /** 還元スロットに入れたアイテムのレシピ検索結果 */
-    private var currentRecipeResolveDataList: List<RecipeResolveData>? = null
-
-    private val prevMaterialSlotItemList = mutableListOf<ItemStack>()
-
-    /** 還元スロットに入っているアイテム */
-    var currentResetSlotItemStack = ItemStack.EMPTY
-        private set
-
-    /** 複数あった場合にレシピを切り替えるための */
-    private var pageIndex = 0
-
-    /** [ResetTableScreenHandler]と[ResetTableEntity]の中で[pageIndex]を同期させる */
-    private val propertyDelegate = object : PropertyDelegate {
-        override fun get(index: Int): Int {
-            return when (index) {
-                DelegatePropertyKeys.PAGE_INDEX.index -> pageIndex
-                else -> 0
-            }
-        }
-
-        override fun set(index: Int, value: Int) {
-            when (index) {
-                DelegatePropertyKeys.PAGE_INDEX.index -> pageIndex = value
-            }
-        }
-
-        override fun size(): Int {
-            return DelegatePropertyKeys.getPropertyKeySize()
-        }
-    }
-
     /**
      * Entityが持っているアイテムを返す
      *
@@ -92,7 +59,7 @@ class ResetTableEntity(
 
     /** GUIを返す？ */
     override fun createMenu(syncId: Int, playerInventory: PlayerInventory, player: PlayerEntity?): ScreenHandler {
-        return ResetTableScreenHandler(syncId, playerInventory, this, propertyDelegate)
+        return ResetTableScreenHandler(syncId, playerInventory, this)
     }
 
     /** ホッパー等からアクセスできるスロットを返す */
@@ -153,40 +120,19 @@ class ResetTableEntity(
      * ここでレシピ検索をしている
      * */
     override fun markDirty() {
-        updateResult()
+        updateResultItems()
         itemChangeCallbackList.forEach { it.invoke() }
     }
 
-    /** いまの還元スロットに入っているアイテムのレシピを探して、材料スロット（3x3）に入れる */
-    private fun updateResult() {
-
-        val resetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
-        currentResetSlotItemStack = resetSlotItemStack
-
-        updateResultItems()
-
-        prevMaterialSlotItemList.clear()
-        prevMaterialSlotItemList.addAll(getMaterialSlotItemStackList())
-
-/*
-        // 作るのに必要なアイテムを取得する
-        // 還元スロットのアイテムが変わっていたら再計算
-        if (ItemStack.areItemsEqual(currentResetSlotItemStack, resetSlotItemStack)) {
-            currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(nonNullWorld, resetSlotItemStack) ?: return
-        }
-
-        // 材料スロットが空いていれば
-        if (isMaterialSlotEmpty()) {
-            updateResultItems()
-        }
-*/
-
-
-    }
-
+    /**
+     * いまの還元スロットに入っているアイテムのレシピを探して、材料スロット（3x3）に入れる
+     *
+     * 既に材料スロットに入っている場合は戻さない、けど前回と同じレシピだった場合は戻す
+     * */
     private fun updateResultItems() {
         val world = world ?: return
-        currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(world, currentResetSlotItemStack)
+        val currentResetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
+        val currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(world, currentResetSlotItemStack)
         if (isMaterialSlotEmpty()) {
             currentRecipeResolveDataList
                 ?.getOrNull(0)
@@ -255,15 +201,6 @@ class ResetTableEntity(
             val list2Item = list2.getOrNull(index) ?: ItemStack.EMPTY
             list1Item.item == list2Item.item
         }.all { it }
-    }
-
-    /**
-     * 現在のレシピ番号を返す
-     *
-     * @return レシピ番号
-     * */
-    private fun getRecipePageIndex(): Int {
-        return propertyDelegate.get(DelegatePropertyKeys.PAGE_INDEX.index)
     }
 
     /**

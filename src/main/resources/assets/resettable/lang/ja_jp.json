@@ -6,5 +6,6 @@
   "gui.resettable.error_not_found_recipe": "レシピが存在しないようです",
   "gui.resettable.error_require_stack_count": "アイテム数が足りません",
   "gui.resettable.error_enchanted_item": "エンチャント済みアイテムは戻せません",
+  "gui.resettable.error_has_metadata": "メタデータがあるアイテムは戻せません",
   "gui.resettable.successful": "もとに戻せます"
 }
