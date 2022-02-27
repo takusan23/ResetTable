@@ -13,7 +13,6 @@ import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.NamedScreenHandlerFactory
-import net.minecraft.screen.PropertyDelegate
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.Text
@@ -201,25 +200,6 @@ class ResetTableEntity(
             val list2Item = list2.getOrNull(index) ?: ItemStack.EMPTY
             list1Item.item == list2Item.item
         }.all { it }
-    }
-
-    /**
-     * [PropertyDelegate]で使うキー代わり。[index]をキー代わりにする
-     * */
-    enum class DelegatePropertyKeys {
-        /** ページ切り替え番号 */
-        PAGE_INDEX;
-
-        /** 整数値を返す */
-        val index: Int
-            get() = this.ordinal
-
-        companion object {
-            /** [DelegatePropertyKeys]が何個あるか返す */
-            fun getPropertyKeySize(): Int {
-                return values().size
-            }
-        }
     }
 
     companion object {
