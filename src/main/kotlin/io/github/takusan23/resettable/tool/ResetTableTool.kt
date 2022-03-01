@@ -2,7 +2,6 @@ package io.github.takusan23.resettable.tool
 
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.minecraft.enchantment.EnchantmentHelper
-import net.minecraft.item.BlockItem
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
 import net.minecraft.recipe.ShapedRecipe
@@ -80,7 +79,7 @@ object ResetTableTool {
             resultItemStack.isDamaged -> VerifyResult.ERROR_ITEM_DAMAGED
             EnchantmentHelper.get(resultItemStack).isNotEmpty() -> VerifyResult.ERROR_ENCHANTED_ITEM
             availableRecipe == null -> VerifyResult.ERROR_REQUIRE_STACK_COUNT
-            BlockItem.getBlockEntityNbt(resultItemStack)?.isEmpty == false -> VerifyResult.ERROR_HAS_METADATA
+            resultItemStack.getSubNbt("BlockEntityTag")?.isEmpty == false -> VerifyResult.ERROR_HAS_METADATA
             else -> VerifyResult.SUCCESS
         }
     }

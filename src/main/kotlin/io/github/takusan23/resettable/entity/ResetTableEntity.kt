@@ -84,10 +84,8 @@ class ResetTableEntity(
         return slot in 0..8
     }
 
-    /** インベントリを保存する */
-    override fun writeNbt(nbt: NbtCompound?) {
-        super.writeNbt(nbt)
-        Inventories.writeNbt(nbt, this.inventory)
+    override fun writeNbt(nbt: NbtCompound?): NbtCompound {
+        return Inventories.writeNbt(nbt, this.inventory)
     }
 
     /** 保存したインベントリを取り出す */
