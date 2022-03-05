@@ -145,9 +145,10 @@ class ResetTableEntity(
                 }
         } else {
             // スロット空いてないけど、今のスロットと同じ中身だった場合
+            // ただし材料スロットが1スタックを超えるようなら何もしない
             currentRecipeResolveDataList
                 ?.firstOrNull { recipeResolveData ->
-                    isEqualItemByItemStackList(getMaterialSlotItemStackList(), recipeResolveData.recipePatternFormattedList)
+                    isEqualItemByItemStackList(getMaterialSlotItemStackList(), recipeResolveData.recipePatternFormattedList) && isInsertableMaterialSlot()
                 }?.also { recipeResolveData ->
                     // アイテム数を増やす
                     getMaterialSlotItemStackList()
@@ -170,12 +171,21 @@ class ResetTableEntity(
     }
 
     /**
-     * 戻したアイテムが入るスロットが空っぽかどうか
+     * 材料スロットが空っぽかどうか
      *
      * @return 3x3 のスロットが空っぽならtrue
      * */
     private fun isMaterialSlotEmpty(): Boolean {
-        return (0..8).map { getStack(it) }.all { it.isEmpty }
+        return getMaterialSlotItemStackList().all { it.isEmpty }
+    }
+
+    /**
+     * 材料スロットのアイテムのスタックが1スタックを超えない場合はtrueを返す
+     *
+     * @return どれか一つでも1スタックを超える場合はfalse
+     */
+    private fun isInsertableMaterialSlot(): Boolean {
+        return getMaterialSlotItemStackList().all { it.count < ITEM_STACK_MAX_VALUE }
     }
 
     /**
@@ -206,5 +216,8 @@ class ResetTableEntity(
 
         /** リセットしたいアイテムが入るスロット番号 */
         const val RESET_TABLE_RESET_ITEM_SLOT = 9
+
+        /** 1スタック */
+        const val ITEM_STACK_MAX_VALUE = 64
     }
 }
