@@ -11,13 +11,15 @@
 ![Imgur](https://imgur.com/eBSK2rK.png)
 
 # MOD導入方法
-
-- Fabric API
+- 最新の Fabric Loader を入れる
+- 以下の前提MODをmodsの中に入れる
+  - Fabric API
     - https://www.curseforge.com/minecraft/mc-mods/fabric-api/files
-- Fabric Language Kotlin
+  - Fabric Language Kotlin
     - Kotlinという言語で書かれたため、他のMODと違い必要になる。
     - https://www.curseforge.com/minecraft/mc-mods/fabric-language-kotlin/files
-- Mod本体
+  - Mod本体
+- 以上
 
 ## 開発者向け
 
