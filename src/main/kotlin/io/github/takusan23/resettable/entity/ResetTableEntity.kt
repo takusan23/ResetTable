@@ -145,9 +145,11 @@ class ResetTableEntity(
                 }
         } else {
             // スロット空いてないけど、今のスロットと同じ中身だった場合
+            // ただし材料スロットが1スタックを超えるようなら何もしない
             currentRecipeResolveDataList
                 ?.firstOrNull { recipeResolveData ->
                     isEqualItemByItemStackList(getMaterialSlotItemStackList(), recipeResolveData.recipePatternFormattedList)
+                            && isInsertableMaterialSlot(recipeResolveData.recipePatternFormattedList[0].count)
                 }?.also { recipeResolveData ->
                     // アイテム数を増やす
                     getMaterialSlotItemStackList()
@@ -170,12 +172,22 @@ class ResetTableEntity(
     }
 
     /**
-     * 戻したアイテムが入るスロットが空っぽかどうか
+     * 材料スロットが空っぽかどうか
      *
      * @return 3x3 のスロットが空っぽならtrue
      * */
     private fun isMaterialSlotEmpty(): Boolean {
-        return (0..8).map { getStack(it) }.all { it.isEmpty }
+        return getMaterialSlotItemStackList().all { it.isEmpty }
+    }
+
+    /**
+     * 材料スロットに指定したアイテム数を入れると、1スタックを超えてしまう場合はfalseを返す
+     *
+     * @param addCount 追加数
+     * @return どれか一つでも1スタックを超える場合はfalse
+     * */
+    private fun isInsertableMaterialSlot(addCount: Int): Boolean {
+        return getMaterialSlotItemStackList().all { it.count + addCount <= ITEM_STACK_MAX_VALUE }
     }
 
     /**
@@ -195,16 +207,19 @@ class ResetTableEntity(
      * @return 同じ場合はtrue
      * */
     private fun isEqualItemByItemStackList(list1: List<ItemStack>, list2: List<ItemStack>): Boolean {
-        return (0..kotlin.math.max(list1.size, list2.size)).map { index ->
+        return (0..kotlin.math.max(list1.size, list2.size)).all { index ->
             val list1Item = list1.getOrNull(index) ?: ItemStack.EMPTY
             val list2Item = list2.getOrNull(index) ?: ItemStack.EMPTY
             list1Item.item == list2Item.item
-        }.all { it }
+        }
     }
 
     companion object {
 
         /** リセットしたいアイテムが入るスロット番号 */
         const val RESET_TABLE_RESET_ITEM_SLOT = 9
+
+        /** 1スタック */
+        const val ITEM_STACK_MAX_VALUE = 64
     }
 }
