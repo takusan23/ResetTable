@@ -187,7 +187,7 @@ class ResetTableEntity(
      * @return どれか一つでも1スタックを超える場合はfalse
      * */
     private fun isInsertableMaterialSlot(addCount: Int): Boolean {
-        return getMaterialSlotItemStackList().all { it.count + addCount < ITEM_STACK_MAX_VALUE }
+        return getMaterialSlotItemStackList().all { it.count + addCount <= ITEM_STACK_MAX_VALUE }
     }
 
     /**
