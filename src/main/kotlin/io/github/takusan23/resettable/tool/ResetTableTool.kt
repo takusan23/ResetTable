@@ -6,7 +6,7 @@ import net.minecraft.item.BlockItem
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
 import net.minecraft.recipe.ShapedRecipe
-import net.minecraft.text.TranslatableText
+import net.minecraft.text.Text
 import net.minecraft.world.World
 
 /** このMODの目的となる作ったアイテムを戻すための関数がある */
@@ -175,7 +175,7 @@ object ResetTableTool {
         if (result == VerifyResult.ERROR_EMPTY_ITEM_STACK) {
             return null
         }
-        return TranslatableText(result.localizeKey).string to result.textColor
+        return Text.translatable(result.localizeKey).string to result.textColor
     }
 
 }
