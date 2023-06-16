@@ -3,7 +3,6 @@ package io.github.takusan23.resettable.screen
 import io.github.takusan23.resettable.entity.ResetTableEntity
 import io.github.takusan23.resettable.entity.ResetTableEntity.Companion.RESET_TABLE_RESET_ITEM_SLOT
 import io.github.takusan23.resettable.tool.ResetTableTool
-import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.inventory.Inventory
@@ -30,11 +29,7 @@ class ResetTableScreenHandler(
     var blockPos = BlockPos.ORIGIN!!
         private set
 
-    /**
-     * クライアント側で呼ばれるコンストラクター
-     *
-     * 登録の際は [ScreenHandlerRegistry.registerExtended] を使う
-     * */
+    /** クライアント側で呼ばれるコンストラクター */
     constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf) : this(syncId, playerInventory) {
         blockPos = buf.readBlockPos()
     }
@@ -64,13 +59,8 @@ class ResetTableScreenHandler(
         }
     }
 
-    /** よくわからｎ */
-    override fun canUse(player: PlayerEntity?): Boolean {
-        return this.inventory.canPlayerUse(player)
-    }
-
     /** 多分シフトキー押したときの挙動 */
-    override fun transferSlot(player: PlayerEntity?, index: Int): ItemStack {
+    override fun quickMove(player: PlayerEntity?, index: Int): ItemStack {
         var newStack = ItemStack.EMPTY
         val slot = slots[index]
         if (slot.hasStack()) {
@@ -97,11 +87,16 @@ class ResetTableScreenHandler(
         return newStack
     }
 
+    /** よくわからｎ */
+    override fun canUse(player: PlayerEntity?): Boolean {
+        return this.inventory.canPlayerUse(player)
+    }
+
     /**
      * スロットに入れたアイテムが戻せるか確かめる関数
      *
      * @return [ResetTableTool.VerifyResult]
-     * */
+     */
     fun verifyResultItem(): ResetTableTool.VerifyResult {
         return ResetTableTool.verifyResultItemRecipe(playerInventory.player.world, getResetItemStack())
     }
@@ -110,7 +105,7 @@ class ResetTableScreenHandler(
      * レシピのパターンが何種類あるか返す
      *
      * @return パターン数。レシピが解決できない場合はnull
-     * */
+     */
     fun getRecipePatternCount(): Int? {
         val world = playerInventory.player.world
         return ResetTableTool.findCraftingMaterial(world, getResetItemStack())?.size
@@ -120,7 +115,7 @@ class ResetTableScreenHandler(
      * 完成品スロットのアイテムを取得する
      *
      * @return 完成品スロットにあるアイテム
-     * */
+     */
     private fun getResetItemStack(): ItemStack {
         return inventory.getStack(RESET_TABLE_RESET_ITEM_SLOT)
     }

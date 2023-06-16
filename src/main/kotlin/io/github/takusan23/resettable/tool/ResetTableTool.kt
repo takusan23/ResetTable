@@ -13,17 +13,17 @@ import net.minecraft.world.World
 object ResetTableTool {
 
     /** 赤色カラーコード */
-    private val COLOR_RED = 0xFF0000
+    private const val COLOR_RED = 0xFF0000
 
     /** 青色カラーコード */
-    private val COLOR_BLUE = 0x0000FF
+    private const val COLOR_BLUE = 0x0000FF
 
     /**
      * [verifyResultItemRecipe]のレスポンス
      *
      * @param localizeKey ja_jp.json 等のローカライズでのキー
      * @param textColor 文字の色
-     * */
+     */
     enum class VerifyResult(val localizeKey: String, val textColor: Int) {
         /** ItemStackが空っぽ。これはユーザーにエラーとしては表示しなくていい（アイテム入ってないエラーなので） */
         ERROR_EMPTY_ITEM_STACK("gui.resettable.error_empty_item_stack", COLOR_BLUE),
@@ -53,14 +53,14 @@ object ResetTableTool {
      * @param world レシピもらうのに使う
      * @param resetItemStack 探すアイテム
      * @return レシピの配列
-     * */
+     */
     private fun findRecipe(world: World, resetItemStack: ItemStack): List<CraftingRecipe> {
         val recipeManager = world.recipeManager.values()
-        // クラフトレシピを完成品から探す
         return recipeManager
-            .filter { it.output.item == resetItemStack.item }
             // 作業台だけ
             .filterIsInstance<CraftingRecipe>()
+            // クラフトレシピを完成品から探す
+            .filter { it.getOutput(null).item == resetItemStack.item }
     }
 
     /**
@@ -69,10 +69,10 @@ object ResetTableTool {
      * @param world レシピを取得するのに使う
      * @param resultItemStack 検証するアイテム
      * @return [VerifyResult]
-     * */
+     */
     fun verifyResultItemRecipe(world: World, resultItemStack: ItemStack): VerifyResult {
         val recipeList = findRecipe(world, resultItemStack)
-        val availableRecipe = recipeList.firstOrNull { it.output.count <= resultItemStack.count }
+        val availableRecipe = recipeList.firstOrNull { it.getOutput(null).count <= resultItemStack.count }
 
         return when {
             resultItemStack == ItemStack.EMPTY -> VerifyResult.ERROR_EMPTY_ITEM_STACK
@@ -91,7 +91,7 @@ object ResetTableTool {
      * @param world レシピを取得するのに使う
      * @param resetItemStack 戻したいアイテム
      * @return [verifyResultItemRecipe]で成功を返さなかった場合はnull
-     * */
+     */
     fun findCraftingMaterial(world: World, resetItemStack: ItemStack): List<RecipeResolveData>? {
         // 検証した結果もとに戻せない場合はnullを返す
         if (verifyResultItemRecipe(world, resetItemStack) != VerifyResult.SUCCESS) return null
@@ -100,11 +100,11 @@ object ResetTableTool {
         val recipeList = findRecipe(world, resetItemStack)
             // スタック数を確認する
             // 同じ完成品のレシピで複数返す場合に備えて
-            .filter { it.output.count <= resetItemStack.count }
+            .filter { it.getOutput(null).count <= resetItemStack.count }
 
         val recipeResolvedDataList = recipeList.map { recipe ->
             val resetItemStackCount = resetItemStack.count
-            val recipeCreateItemCount = recipe.output?.count ?: 0
+            val recipeCreateItemCount = recipe.getOutput(null)?.count ?: 0
             // 0で割ることがあるらしい
             if (resetItemStackCount >= 1 && recipeCreateItemCount >= 1) {
                 // 割り算して何個戻せるか
@@ -124,26 +124,21 @@ object ResetTableTool {
                     // レシピの形に整形した配列
                     val recipePatternList = mutableListOf<ItemStack>()
 
-                    /**
-                     * 例えば剣のレシピがこうで
-                     *
-                     * X
-                     * X
-                     * Y
-                     *
-                     * 普通に材料を取得するとこうなる
-                     *
-                     * [X,X,Y]
-                     *
-                     * これだとレシピの形になっていないのでこんな感じの配列にする。(以下の例は改行してるけど)
-                     *
-                     * [
-                     *  X,empty,empty,
-                     *  X,empty,empty,
-                     *  Y,empty,empty
-                     * ]
-                     *
-                     * */
+                    //  例えば剣のレシピがこうで
+                    //
+                    // X
+                    // X
+                    // Y
+                    //
+                    // 普通に材料を取得するとこうなる
+                    // [X,X,Y]
+                    //
+                    // これだとレシピの形になっていないのでこんな感じの配列にする。(以下の例は改行してるけど)
+                    // [
+                    //  X,empty,empty,
+                    //  X,empty,empty,
+                    //  Y,empty,empty
+                    // ]
                     var prevPos = 0
                     repeat(patternHeight) { height ->
                         // ここで各横スロットのアイテムを一斉に入れている
@@ -169,7 +164,7 @@ object ResetTableTool {
      *
      * @param result 列挙型のエラー
      * @return 文字と色のPair。nullの場合はアイテムが入ってないときで特にユーザー向けの説明はいらないかな
-     * */
+     */
     fun resolveUserDescription(result: VerifyResult): Pair<String, Int>? {
         // 還元スロットが空っぽのときのエラーは出さない
         if (result == VerifyResult.ERROR_EMPTY_ITEM_STACK) {

@@ -19,7 +19,7 @@ import net.minecraft.world.World
  * リセットテーブルの中身
  *
  * @param settings ブロックの設定（硬さとか。適正ツールはJSONを書かないといけないという初見殺し）
- * */
+ */
 class ResetTableBlock(settings: Settings?) : BlockWithEntity(settings) {
 
     /** Entityを返す。アイテムを保持するやつ*/

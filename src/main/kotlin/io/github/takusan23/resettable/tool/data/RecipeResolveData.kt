@@ -17,7 +17,7 @@ import net.minecraft.item.ItemStack
  *
  * @param recipePatternFormattedList レシピの配列
  * @param resolveSlotItemStack 戻したけどアイテム数が余った場合は入る
- * */
+ */
 data class RecipeResolveData(
     val recipePatternFormattedList: List<ItemStack>,
     val resolveSlotItemStack: ItemStack,
