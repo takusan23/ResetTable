@@ -52,9 +52,8 @@ class ResetTableScreen(
     }
 
     override fun render(context: DrawContext?, mouseX: Int, mouseY: Int, delta: Float) {
-        this.renderBackground(context);
-        super.render(context, mouseX, mouseY, delta);
-        this.drawMouseoverTooltip(context, mouseX, mouseY);
+        super.render(context, mouseX, mouseY, delta)
+        this.drawMouseoverTooltip(context, mouseX, mouseY)
     }
 
     companion object {

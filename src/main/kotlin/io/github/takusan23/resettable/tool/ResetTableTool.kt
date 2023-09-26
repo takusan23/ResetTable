@@ -60,7 +60,7 @@ object ResetTableTool {
             // 作業台だけ
             .filterIsInstance<CraftingRecipe>()
             // クラフトレシピを完成品から探す
-            .filter { it.getOutput(null).item == resetItemStack.item }
+            .filter { it.getResult(null).item == resetItemStack.item }
     }
 
     /**
@@ -72,7 +72,7 @@ object ResetTableTool {
      */
     fun verifyResultItemRecipe(world: World, resultItemStack: ItemStack): VerifyResult {
         val recipeList = findRecipe(world, resultItemStack)
-        val availableRecipe = recipeList.firstOrNull { it.getOutput(null).count <= resultItemStack.count }
+        val availableRecipe = recipeList.firstOrNull { it.getResult(null).count <= resultItemStack.count }
 
         return when {
             resultItemStack == ItemStack.EMPTY -> VerifyResult.ERROR_EMPTY_ITEM_STACK
@@ -100,11 +100,11 @@ object ResetTableTool {
         val recipeList = findRecipe(world, resetItemStack)
             // スタック数を確認する
             // 同じ完成品のレシピで複数返す場合に備えて
-            .filter { it.getOutput(null).count <= resetItemStack.count }
+            .filter { it.getResult(null).count <= resetItemStack.count }
 
         val recipeResolvedDataList = recipeList.map { recipe ->
             val resetItemStackCount = resetItemStack.count
-            val recipeCreateItemCount = recipe.getOutput(null)?.count ?: 0
+            val recipeCreateItemCount = recipe.getResult(null)?.count ?: 0
             // 0で割ることがあるらしい
             if (resetItemStackCount >= 1 && recipeCreateItemCount >= 1) {
                 // 割り算して何個戻せるか
