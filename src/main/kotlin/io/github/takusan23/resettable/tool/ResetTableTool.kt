@@ -57,6 +57,8 @@ object ResetTableTool {
     private fun findRecipe(world: World, resetItemStack: ItemStack): List<CraftingRecipe> {
         val recipeManager = world.recipeManager.values()
         return recipeManager
+            // ID と Recipe の Map になってる、Recipe だけにする
+            .map { it.value }
             // 作業台だけ
             .filterIsInstance<CraftingRecipe>()
             // クラフトレシピを完成品から探す
