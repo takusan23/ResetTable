@@ -1,5 +1,6 @@
 package io.github.takusan23.resettable.block
 
+import com.mojang.serialization.MapCodec
 import io.github.takusan23.resettable.entity.ResetTableEntity
 import net.minecraft.block.BlockRenderType
 import net.minecraft.block.BlockState
@@ -55,12 +56,22 @@ class ResetTableBlock(settings: Settings?) : BlockWithEntity(settings) {
         }
     }
 
+    override fun getCodec(): MapCodec<out BlockWithEntity> {
+        return CODEC
+    }
+
     override fun hasComparatorOutput(state: BlockState?): Boolean {
         return true
     }
 
     override fun getComparatorOutput(state: BlockState?, world: World, pos: BlockPos?): Int {
         return ScreenHandler.calculateComparatorOutput(world.getBlockEntity(pos))
+    }
+
+    companion object {
+        // Fabric 曰くまだ内部では使われていない、がとりあえず返す必要があるとのこと
+        // https://fabricmc.net/2023/11/30/1203.html
+        private val CODEC = createCodec { settings -> ResetTableBlock(settings) }
     }
 
 }
