@@ -8,7 +8,6 @@ import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.inventory.Inventory
 import net.minecraft.inventory.SimpleInventory
 import net.minecraft.item.ItemStack
-import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.Slot
 import net.minecraft.util.math.BlockPos
@@ -16,22 +15,24 @@ import net.minecraft.util.math.BlockPos
 /**
  * クライアントとサーバーでGUIの状態を同期させるのに必要なクラス
  *
- * @param propertyDelegate 整数値？を[ResetTableEntity]とレシピのページ番号を同期させるので使う
  * @param inventory [ResetTableEntity]にあるやつを渡して
  * */
 class ResetTableScreenHandler(
     syncId: Int,
     private val playerInventory: PlayerInventory,
-    private val inventory: Inventory = SimpleInventory(10),
+    private val inventory: Inventory = SimpleInventory(10)
 ) : ScreenHandler(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER, syncId) {
 
     /** 開いてるGUIがあるEntityのブロックの位置 */
-    var blockPos = BlockPos.ORIGIN!!
-        private set
+    private var blockPos = BlockPos.ORIGIN!!
 
-    /** クライアント側で呼ばれるコンストラクター */
-    constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf) : this(syncId, playerInventory) {
-        blockPos = buf.readBlockPos()
+    /**
+     * クライアント側で呼ばれるコンストラクター
+     *
+     * @param serverClientData サーバーから送られてくる値
+     */
+    constructor(syncId: Int, playerInventory: PlayerInventory, serverClientData: ResetTableScreenHandlerServerClientData) : this(syncId, playerInventory) {
+        blockPos = serverClientData.blockPos
     }
 
     init {

@@ -9,7 +9,6 @@ import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.util.ActionResult
-import net.minecraft.util.Hand
 import net.minecraft.util.ItemScatterer
 import net.minecraft.util.hit.BlockHitResult
 import net.minecraft.util.math.BlockPos
@@ -34,7 +33,7 @@ class ResetTableBlock(settings: Settings?) : BlockWithEntity(settings) {
     }
 
     /** ブロックをクリックしたとき */
-    override fun onUse(state: BlockState?, world: World?, pos: BlockPos?, player: PlayerEntity?, hand: Hand?, hit: BlockHitResult?): ActionResult {
+    override fun onUse(state: BlockState?, world: World?, pos: BlockPos?, player: PlayerEntity?, hit: BlockHitResult?): ActionResult {
         if (world?.isClient == false && state != null) {
             // BlockEntityが手に入るとか
             val screenHandlerFactory = state.createScreenHandlerFactory(world, pos)

@@ -1,6 +1,7 @@
 package io.github.takusan23.resettable.entity
 
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
+import io.github.takusan23.resettable.screen.ResetTableScreenHandlerServerClientData
 import io.github.takusan23.resettable.tool.ResetTableTool
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
@@ -11,7 +12,7 @@ import net.minecraft.inventory.Inventories
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NbtCompound
-import net.minecraft.network.PacketByteBuf
+import net.minecraft.registry.RegistryWrapper
 import net.minecraft.screen.NamedScreenHandlerFactory
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.server.network.ServerPlayerEntity
@@ -34,7 +35,7 @@ import net.minecraft.util.math.Direction
 class ResetTableEntity(
     pos: BlockPos,
     state: BlockState,
-) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), NamedScreenHandlerFactory, ExtendedScreenHandlerFactory, ImplementedInventory, SidedInventory {
+) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), NamedScreenHandlerFactory, ExtendedScreenHandlerFactory<ResetTableScreenHandlerServerClientData>, ImplementedInventory, SidedInventory {
 
     /**
      * リセットテーブルのインベントリ
@@ -84,15 +85,15 @@ class ResetTableEntity(
     }
 
     /** インベントリを保存する */
-    override fun writeNbt(nbt: NbtCompound?) {
-        super.writeNbt(nbt)
-        Inventories.writeNbt(nbt, this.inventory)
+    override fun writeNbt(nbt: NbtCompound?, registryLookup: RegistryWrapper.WrapperLookup?) {
+        super.writeNbt(nbt, registryLookup)
+        Inventories.readNbt(nbt, this.inventory, registryLookup)
     }
 
     /** 保存したインベントリを取り出す */
-    override fun readNbt(nbt: NbtCompound?) {
-        super.readNbt(nbt)
-        Inventories.readNbt(nbt, this.inventory)
+    override fun readNbt(nbt: NbtCompound?, registryLookup: RegistryWrapper.WrapperLookup?) {
+        super.readNbt(nbt, registryLookup)
+        Inventories.writeNbt(nbt, this.inventory, registryLookup)
     }
 
     override fun getDisplayName(): Text {
@@ -105,11 +106,9 @@ class ResetTableEntity(
      *
      * クライアントに贈りたいデータをここで詰めておく。
      * */
-    override fun writeScreenOpeningData(player: ServerPlayerEntity?, buf: PacketByteBuf?) {
-        buf?.apply {
-            // クライアント側（GUI）でブロックの位置を知りたいので渡しておく
-            writeBlockPos(pos)
-        }
+    override fun getScreenOpeningData(player: ServerPlayerEntity?): ResetTableScreenHandlerServerClientData {
+        // クライアント側（GUI）でブロックの位置を知りたいので渡しておく
+        return ResetTableScreenHandlerServerClientData(pos)
     }
 
     /**

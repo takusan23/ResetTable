@@ -2,7 +2,6 @@ package io.github.takusan23.resettable.tool
 
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.minecraft.enchantment.EnchantmentHelper
-import net.minecraft.item.BlockItem
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
 import net.minecraft.recipe.ShapedRecipe
@@ -76,13 +75,25 @@ object ResetTableTool {
         val recipeList = findRecipe(world, resultItemStack)
         val availableRecipe = recipeList.firstOrNull { it.getResult(null).count <= resultItemStack.count }
 
+        // TODO NBT のチェックをする場合
+        // if (!resultItemStack.isEmpty) {
+        //     (world as? ServerWorld)?.server?.registryManager?.also { registryManager ->
+        //         val a = resultItemStack.encode(registryManager)
+        //         println("NbtElement = $a")
+        //     }
+        // }
+
+        // 元のアイテムと比較して、何かしらデータコンポーネント（NBT）が付与されている場合は true
+        // エンチャント済みとか、シュルカーボックスの中身が入っているとか。元のアイテムからデータがある場合はダメ
+        val hasDiffOriginItem = !ItemStack.areItemsAndComponentsEqual(resultItemStack, ItemStack(resultItemStack.item))
+
         return when {
             resultItemStack == ItemStack.EMPTY -> VerifyResult.ERROR_EMPTY_ITEM_STACK
             recipeList.isEmpty() -> VerifyResult.ERROR_NOT_FOUND_RECIPE
             resultItemStack.isDamaged -> VerifyResult.ERROR_ITEM_DAMAGED
-            EnchantmentHelper.get(resultItemStack).isNotEmpty() -> VerifyResult.ERROR_ENCHANTED_ITEM
+            !EnchantmentHelper.getEnchantments(resultItemStack).isEmpty -> VerifyResult.ERROR_ENCHANTED_ITEM
             availableRecipe == null -> VerifyResult.ERROR_REQUIRE_STACK_COUNT
-            BlockItem.getBlockEntityNbt(resultItemStack)?.isEmpty == false -> VerifyResult.ERROR_HAS_METADATA
+            hasDiffOriginItem -> VerifyResult.ERROR_HAS_METADATA
             else -> VerifyResult.SUCCESS
         }
     }
@@ -142,7 +153,7 @@ object ResetTableTool {
                     //  Y,empty,empty
                     // ]
                     var prevPos = 0
-                    repeat(patternHeight) { height ->
+                    repeat(patternHeight) {
                         // ここで各横スロットのアイテムを一斉に入れている
                         // prevPosには各横スロットの最後のIndexが入ってる
                         recipePatternList.addAll(materialList.subList(prevPos, prevPos + patternWidth))

@@ -9,6 +9,7 @@
     }
   ],
   "result": {
-    "item": "resettable:reset_table_block"
+    "count": 1,
+    "id": "resettable:reset_table_block"
   }
 }
