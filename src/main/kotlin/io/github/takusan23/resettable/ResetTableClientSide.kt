@@ -16,7 +16,7 @@ import net.minecraft.util.Identifier
 fun clientSideInit() {
 
     // クライアント側のみGUIの画面をFabricに登録する
-    Registry.register(Registries.SCREEN_HANDLER, Identifier("resettable", "reset_table_block"), ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER)
+    Registry.register(Registries.SCREEN_HANDLER, Identifier.of("resettable", "reset_table_block"), ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER)
     HandledScreens.register(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER) { handler, inventory, title ->
         ResetTableScreen(handler, inventory, title)
     }

@@ -58,7 +58,7 @@ class ResetTableScreen(
 
     companion object {
 
-        private val TEXTURE = Identifier("resettable", "textures/gui/reset_table_gui.png")
+        private val TEXTURE = Identifier.of("resettable", "textures/gui/reset_table_gui.png")
 
         /** 還元スロットのX座標 */
         private const val RESET_SLOT_POS_X = 124

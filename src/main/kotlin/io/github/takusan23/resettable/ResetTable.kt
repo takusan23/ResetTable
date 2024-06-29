@@ -30,8 +30,8 @@ fun init() {
  *
  * MOD初期化時に呼ぶ
  */
-fun registerCreativeTab() {
-    Registry.register(Registries.ITEM_GROUP, Identifier("resettable", "resettable_creative_tab"), ResetTableCreativeTab.CREATIVE_TAB)
+private fun registerCreativeTab() {
+    Registry.register(Registries.ITEM_GROUP, Identifier.of("resettable", "resettable_creative_tab"), ResetTableCreativeTab.CREATIVE_TAB)
 }
 
 /**
@@ -40,7 +40,7 @@ fun registerCreativeTab() {
  * MOD初期化時に呼ぶ
  */
 private fun registerEntities() {
-    Registry.register(Registries.BLOCK_ENTITY_TYPE, Identifier("resettable", "reset_table_block"), ResetTableEntities.RESET_TABLE_BLOCK_ENTITY)
+    Registry.register(Registries.BLOCK_ENTITY_TYPE, Identifier.of("resettable", "reset_table_block"), ResetTableEntities.RESET_TABLE_BLOCK_ENTITY)
 }
 
 /**
@@ -49,7 +49,7 @@ private fun registerEntities() {
  * MOD初期化時に呼ぶ
  */
 private fun registerItems() {
-    Registry.register(Registries.ITEM, Identifier("resettable", "reset_table_block"), ResetTableItems.RESET_TABLE_BLOCK_ITEM)
+    Registry.register(Registries.ITEM, Identifier.of("resettable", "reset_table_block"), ResetTableItems.RESET_TABLE_BLOCK_ITEM)
 }
 
 /**
@@ -58,5 +58,5 @@ private fun registerItems() {
  * MOD初期化時に呼ぶ
  */
 private fun registerBlocks() {
-    Registry.register(Registries.BLOCK, Identifier("resettable", "reset_table_block"), ResetTableBlocks.RESET_TABLE_BLOCK)
+    Registry.register(Registries.BLOCK, Identifier.of("resettable", "reset_table_block"), ResetTableBlocks.RESET_TABLE_BLOCK)
 }
