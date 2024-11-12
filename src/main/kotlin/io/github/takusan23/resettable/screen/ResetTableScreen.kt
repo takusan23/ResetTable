@@ -3,13 +3,15 @@ package io.github.takusan23.resettable.screen
 import io.github.takusan23.resettable.tool.ResetTableTool
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.ingame.HandledScreen
+import net.minecraft.client.render.RenderLayer
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
 
 
 /**
- * 実際に描画するGUIのためのクラス
+ * 実際に描画するGUIのためのクラス。
+ * 多分クライアント側しか呼ばれない。
  *
  * [handler]はgetterは動くけど、setter系はまじで動かない。
  */
@@ -28,14 +30,14 @@ class ResetTableScreen(
     override fun drawBackground(context: DrawContext?, delta: Float, mouseX: Int, mouseY: Int) {
         val x = (width - backgroundWidth) / 2
         val y = (height - backgroundHeight) / 2
-        context?.drawTexture(TEXTURE, x, y, 0, 0, backgroundWidth, backgroundHeight)
+        context?.drawTexture(RenderLayer::getGuiTextured, TEXTURE, x, y, 0f, 0f, backgroundWidth, backgroundHeight, 256, 256)
     }
 
     /** テキスト描画はここで */
     override fun drawForeground(context: DrawContext?, mouseX: Int, mouseY: Int) {
         super.drawForeground(context, mouseX, mouseY)
         // アイテムが戻せない場合はなんで戻せないのか理由を
-        val verify = resetTableScreenHandler?.verifyResultItem()
+        val verify = resetTableScreenHandler?.recipeVerifyResult
         if (verify != null) {
             // エラー時は利用できない理由を
             val textColorPair = ResetTableTool.resolveUserDescription(verify) ?: return

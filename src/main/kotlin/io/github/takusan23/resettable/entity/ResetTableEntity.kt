@@ -16,6 +16,7 @@ import net.minecraft.registry.RegistryWrapper
 import net.minecraft.screen.NamedScreenHandlerFactory
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.world.ServerWorld
 import net.minecraft.text.Text
 import net.minecraft.util.collection.DefaultedList
 import net.minecraft.util.math.BlockPos
@@ -127,9 +128,9 @@ class ResetTableEntity(
      * 既に材料スロットに入っている場合は戻さない、けど前回と同じレシピだった場合は戻す
      * */
     private fun updateResultItems() {
-        val world = world ?: return
+        val serverWorld = (world as? ServerWorld) ?: return
         val currentResetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
-        val currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(world, currentResetSlotItemStack)
+        val currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(serverWorld, currentResetSlotItemStack)
         if (isMaterialSlotEmpty()) {
             currentRecipeResolveDataList
                 ?.getOrNull(0)

@@ -2,7 +2,9 @@ package io.github.takusan23.resettable.screen
 
 import io.github.takusan23.resettable.entity.ResetTableEntity
 import io.github.takusan23.resettable.entity.ResetTableEntity.Companion.RESET_TABLE_RESET_ITEM_SLOT
+import io.github.takusan23.resettable.network.ResetTableErrorPayload
 import io.github.takusan23.resettable.tool.ResetTableTool
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.inventory.Inventory
@@ -10,6 +12,9 @@ import net.minecraft.inventory.SimpleInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.Slot
+import net.minecraft.screen.slot.SlotActionType
+import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.math.BlockPos
 
 /**
@@ -25,6 +30,13 @@ class ResetTableScreenHandler(
 
     /** 開いてるGUIがあるEntityのブロックの位置 */
     private var blockPos = BlockPos.ORIGIN!!
+
+    /**
+     * アイテムが戻せない理由をセットする。
+     * 本当は GUI 側（クライアント側）でもレシピを検索すれば良いのだが、クライアントでレシピにアクセスできなくなった。
+     * そのためサーバーから[io.github.takusan23.resettable.network.ResetTableErrorPayload]を介して教えて貰う必要がある。
+     */
+    var recipeVerifyResult: ResetTableTool.VerifyResult = ResetTableTool.VerifyResult.ERROR_EMPTY_ITEM_STACK
 
     /**
      * クライアント側で呼ばれるコンストラクター
@@ -85,6 +97,11 @@ class ResetTableScreenHandler(
                 slot.markDirty()
             }
         }
+        // 何も無いスロットでシフトクリックしても呼ばれてしまうので一応制御
+        if (!newStack.isEmpty) {
+            // 戻せない場合は理由を送信
+            sendVerifyResultToClient(player)
+        }
         return newStack
     }
 
@@ -93,13 +110,29 @@ class ResetTableScreenHandler(
         return this.inventory.canPlayerUse(player)
     }
 
-    /**
-     * スロットに入れたアイテムが戻せるか確かめる関数
-     *
-     * @return [ResetTableTool.VerifyResult]
-     */
-    fun verifyResultItem(): ResetTableTool.VerifyResult {
-        return ResetTableTool.verifyResultItemRecipe(playerInventory.player.world, getResetItemStack())
+    /** イベントリのスロットを押したとき */
+    override fun onSlotClick(slotIndex: Int, button: Int, actionType: SlotActionType?, player: PlayerEntity?) {
+        super.onSlotClick(slotIndex, button, actionType, player)
+        // もとに戻したいアイテムのスロットの時のみ
+        if (slotIndex != SLOT_RESET_INDEX) return
+        // 戻せない場合は理由を送信
+        sendVerifyResultToClient(player)
+    }
+
+    /** アイテムをもとに戻せない理由をクライアント側へ送る */
+    private fun sendVerifyResultToClient(player: PlayerEntity?) {
+        // サーバー側であること
+        if (player !is ServerPlayerEntity) return
+
+        // 戻せない理由をクライアント側（GUI）へ送る
+        // 実際に元に戻す処理は ResetTableEntity の markDirty 関数を見てください。
+        // なんで戻せない理由をここで判断しているかというと、クライアント側へ送る際に PlayerEntity が必要そうで、markDirty には無い。
+        // ちなみに getResetItemStack() が空の場合はそれ用のエラーになりますが、GUI 側で表示しないようにしているので、特に分岐せずクライアント側へ送ります。
+        val verifyResult = ResetTableTool.verifyResultItemRecipe(
+            serverWorld = player.serverWorld,
+            resultItemStack = getResetItemStack()
+        )
+        ServerPlayNetworking.send(player, ResetTableErrorPayload(blockPos, verifyResult))
     }
 
     /**
@@ -108,8 +141,8 @@ class ResetTableScreenHandler(
      * @return パターン数。レシピが解決できない場合はnull
      */
     fun getRecipePatternCount(): Int? {
-        val world = playerInventory.player.world
-        return ResetTableTool.findCraftingMaterial(world, getResetItemStack())?.size
+        val serverWorld = (playerInventory.player.world as? ServerWorld) ?: return null
+        return ResetTableTool.findCraftingMaterial(serverWorld, getResetItemStack())?.size
     }
 
     /**
@@ -119,5 +152,10 @@ class ResetTableScreenHandler(
      */
     private fun getResetItemStack(): ItemStack {
         return inventory.getStack(RESET_TABLE_RESET_ITEM_SLOT)
+    }
+
+    companion object {
+        /** もとに戻したいアイテムのスロットのインデックス */
+        private const val SLOT_RESET_INDEX = 0
     }
 }

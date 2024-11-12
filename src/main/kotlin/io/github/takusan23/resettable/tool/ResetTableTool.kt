@@ -5,8 +5,9 @@ import net.minecraft.enchantment.EnchantmentHelper
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
 import net.minecraft.recipe.ShapedRecipe
+import net.minecraft.server.world.ServerWorld
 import net.minecraft.text.Text
-import net.minecraft.world.World
+import kotlin.jvm.optionals.getOrNull
 
 /** このMODの目的となる作ったアイテムを戻すための関数がある */
 object ResetTableTool {
@@ -46,6 +47,11 @@ object ResetTableTool {
         SUCCESS("gui.resettable.successful", COLOR_BLUE),
     }
 
+    /** craft メソッド、多分定形、不定形レシピ以外は null で呼び出せない。ので try-catch */
+    private fun CraftingRecipe.craftOrNull(): ItemStack? = runCatching {
+        craft(null, null)
+    }.getOrNull()
+
     /**
      * レシピを探して返す。アイテム数があってるかとかは見ていない
      *
@@ -53,7 +59,7 @@ object ResetTableTool {
      * @param resetItemStack 探すアイテム
      * @return レシピの配列
      */
-    private fun findRecipe(world: World, resetItemStack: ItemStack): List<CraftingRecipe> {
+    private fun findRecipe(world: ServerWorld, resetItemStack: ItemStack): List<CraftingRecipe> {
         val recipeManager = world.recipeManager.values()
         return recipeManager
             // ID と Recipe の Map になってる、Recipe だけにする
@@ -61,19 +67,22 @@ object ResetTableTool {
             // 作業台だけ
             .filterIsInstance<CraftingRecipe>()
             // クラフトレシピを完成品から探す
-            .filter { it.getResult(null).item == resetItemStack.item }
+            .filter { it.craftOrNull()?.item == resetItemStack.item }
     }
 
     /**
      * 引数のアイテムがちゃんと戻せるか確認する関数
      *
-     * @param world レシピを取得するのに使う
+     * @param serverWorld レシピを取得するのに使う。サーバー側しかレシピにアクセスできなくなった。。。
      * @param resultItemStack 検証するアイテム
      * @return [VerifyResult]
      */
-    fun verifyResultItemRecipe(world: World, resultItemStack: ItemStack): VerifyResult {
-        val recipeList = findRecipe(world, resultItemStack)
-        val availableRecipe = recipeList.firstOrNull { it.getResult(null).count <= resultItemStack.count }
+    fun verifyResultItemRecipe(serverWorld: ServerWorld, resultItemStack: ItemStack): VerifyResult {
+        val recipeList = findRecipe(serverWorld, resultItemStack)
+        val availableRecipe = recipeList.firstOrNull {
+            val craftRecipeCount = it.craftOrNull()?.count
+            if (craftRecipeCount != null) craftRecipeCount <= resultItemStack.count else false
+        }
 
         // TODO NBT のチェックをする場合
         // if (!resultItemStack.isEmpty) {
@@ -88,7 +97,7 @@ object ResetTableTool {
         val hasDiffOriginItem = !ItemStack.areItemsAndComponentsEqual(resultItemStack, ItemStack(resultItemStack.item))
 
         return when {
-            resultItemStack == ItemStack.EMPTY -> VerifyResult.ERROR_EMPTY_ITEM_STACK
+            resultItemStack.isEmpty -> VerifyResult.ERROR_EMPTY_ITEM_STACK
             recipeList.isEmpty() -> VerifyResult.ERROR_NOT_FOUND_RECIPE
             resultItemStack.isDamaged -> VerifyResult.ERROR_ITEM_DAMAGED
             !EnchantmentHelper.getEnchantments(resultItemStack).isEmpty -> VerifyResult.ERROR_ENCHANTED_ITEM
@@ -105,7 +114,7 @@ object ResetTableTool {
      * @param resetItemStack 戻したいアイテム
      * @return [verifyResultItemRecipe]で成功を返さなかった場合はnull
      */
-    fun findCraftingMaterial(world: World, resetItemStack: ItemStack): List<RecipeResolveData>? {
+    fun findCraftingMaterial(world: ServerWorld, resetItemStack: ItemStack): List<RecipeResolveData>? {
         // 検証した結果もとに戻せない場合はnullを返す
         if (verifyResultItemRecipe(world, resetItemStack) != VerifyResult.SUCCESS) return null
 
@@ -113,11 +122,14 @@ object ResetTableTool {
         val recipeList = findRecipe(world, resetItemStack)
             // スタック数を確認する
             // 同じ完成品のレシピで複数返す場合に備えて
-            .filter { it.getResult(null).count <= resetItemStack.count }
+            .filter {
+                val resultItem = it.craftOrNull()
+                if (resultItem != null) resultItem.count <= resetItemStack.count else false
+            }
 
         val recipeResolvedDataList = recipeList.map { recipe ->
             val resetItemStackCount = resetItemStack.count
-            val recipeCreateItemCount = recipe.getResult(null)?.count ?: 0
+            val recipeCreateItemCount = recipe.craftOrNull()?.count ?: 0
             // 0で割ることがあるらしい
             if (resetItemStackCount >= 1 && recipeCreateItemCount >= 1) {
                 // 割り算して何個戻せるか
@@ -126,11 +138,23 @@ object ResetTableTool {
                 val notResolveCount = resetItemStackCount % recipeCreateItemCount
                 // 返す
                 val notResolveItemStack = resetItemStack.copy().apply { count = notResolveCount }
-                val materialList = recipe.ingredients
-                    .map { it.matchingStacks.getOrNull(0)?.copy()?.apply { count = craftCount } ?: ItemStack.EMPTY }
 
                 // 定形レシピの場合は材料スロット(3x3)で正しいアイテムの配列に置き換える
                 if (recipe is ShapedRecipe) {
+                    val ingredientPlacement = recipe.ingredientPlacement
+                    // placementSlots に数字か null が入ってて、数字の場合は placements 配列のインデックスとして使えば良い。
+                    // null は empty
+                    val shapedRecipeList = ingredientPlacement.placementSlots.map { placementSlotOptional ->
+                        // ingredients でのインデックス
+                        val itemStackOrNull = placementSlotOptional.getOrNull()?.placerOutputPosition?.let { ingredientIndex ->
+                            // first() している。例えばチェストとかはオークの木材以外でも作れるので matchingItems には木の種類が入ってる
+                            ingredientPlacement.ingredients[ingredientIndex].matchingItems.firstOrNull()?.value()
+                        }?.let { itemOrNull ->
+                            ItemStack(itemOrNull, craftCount)
+                        }
+                        itemStackOrNull ?: ItemStack.EMPTY
+                    }
+
                     // 作成で使う縦、横のスロット数
                     val patternWidth = recipe.width
                     val patternHeight = recipe.height
@@ -156,7 +180,7 @@ object ResetTableTool {
                     repeat(patternHeight) {
                         // ここで各横スロットのアイテムを一斉に入れている
                         // prevPosには各横スロットの最後のIndexが入ってる
-                        recipePatternList.addAll(materialList.subList(prevPos, prevPos + patternWidth))
+                        recipePatternList.addAll(shapedRecipeList.subList(prevPos, prevPos + patternWidth))
                         // 幅が3未満の場合は残りを空のアイテムで埋める
                         repeat(3 - patternWidth) {
                             recipePatternList.add(ItemStack.EMPTY)
@@ -165,6 +189,9 @@ object ResetTableTool {
                     }
                     RecipeResolveData(recipePatternList, notResolveItemStack)
                 } else {
+                    val materialList = recipe.ingredientPlacement.ingredients.map { ingredient ->
+                        ingredient.matchingItems.firstOrNull()?.value()?.let { ItemStack(it, craftCount) } ?: ItemStack.EMPTY
+                    }
                     RecipeResolveData(materialList, notResolveItemStack)
                 }
             } else null
