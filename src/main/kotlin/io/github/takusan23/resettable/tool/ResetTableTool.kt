@@ -5,9 +5,9 @@ import net.minecraft.enchantment.EnchantmentHelper
 import net.minecraft.item.ItemStack
 import net.minecraft.recipe.CraftingRecipe
 import net.minecraft.recipe.ShapedRecipe
+import net.minecraft.recipe.display.SlotDisplayContexts
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.text.Text
-import kotlin.jvm.optionals.getOrNull
 
 /** このMODの目的となる作ったアイテムを戻すための関数がある */
 object ResetTableTool {
@@ -127,6 +127,7 @@ object ResetTableTool {
                 if (resultItem != null) resultItem.count <= resetItemStack.count else false
             }
 
+        val createParameters = SlotDisplayContexts.createParameters(world)
         val recipeResolvedDataList = recipeList.map { recipe ->
             val resetItemStackCount = resetItemStack.count
             val recipeCreateItemCount = recipe.craftOrNull()?.count ?: 0
@@ -144,15 +145,17 @@ object ResetTableTool {
                     val ingredientPlacement = recipe.ingredientPlacement
                     // placementSlots に数字か null が入ってて、数字の場合は placements 配列のインデックスとして使えば良い。
                     // null は empty
-                    val shapedRecipeList = ingredientPlacement.placementSlots.map { placementSlotOptional ->
+                    val shapedRecipeList = ingredientPlacement.placementSlots.map { placerOutputPositionOrNegative ->
                         // ingredients でのインデックス
-                        val itemStackOrNull = placementSlotOptional.getOrNull()?.placerOutputPosition?.let { ingredientIndex ->
-                            // first() している。例えばチェストとかはオークの木材以外でも作れるので matchingItems には木の種類が入ってる
-                            ingredientPlacement.ingredients[ingredientIndex].matchingItems.firstOrNull()?.value()
-                        }?.let { itemOrNull ->
-                            ItemStack(itemOrNull, craftCount)
+                        if (placerOutputPositionOrNegative == -1) {
+                            // 空のスロットの場合は -1
+                            ItemStack.EMPTY
+                        } else {
+                            // findFirst() している。例えばチェストとかはオークの木材以外でも作れるので getStacks() には木の種類が入ってる
+                            ingredientPlacement.ingredients[placerOutputPositionOrNegative].toDisplay().getStacks(createParameters)
+                                .first()
+                                .apply { count = craftCount }
                         }
-                        itemStackOrNull ?: ItemStack.EMPTY
                     }
 
                     // 作成で使う縦、横のスロット数
@@ -190,7 +193,9 @@ object ResetTableTool {
                     RecipeResolveData(recipePatternList, notResolveItemStack)
                 } else {
                     val materialList = recipe.ingredientPlacement.ingredients.map { ingredient ->
-                        ingredient.matchingItems.firstOrNull()?.value()?.let { ItemStack(it, craftCount) } ?: ItemStack.EMPTY
+                        ingredient.toDisplay().getStacks(createParameters)
+                            .first()
+                            .apply { count = craftCount }
                     }
                     RecipeResolveData(materialList, notResolveItemStack)
                 }
