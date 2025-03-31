@@ -8,6 +8,7 @@ import net.minecraft.block.BlockWithEntity
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.screen.ScreenHandler
+import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.ActionResult
 import net.minecraft.util.ItemScatterer
 import net.minecraft.util.hit.BlockHitResult
@@ -43,16 +44,8 @@ class ResetTableBlock(settings: Settings?) : BlockWithEntity(settings) {
         return ActionResult.SUCCESS
     }
 
-    /** ブロックを壊したとき。チェスト破壊じにドロップさせる処理なんかができる */
-    override fun onStateReplaced(state: BlockState?, world: World?, pos: BlockPos?, newState: BlockState?, moved: Boolean) {
-        if (state?.block !== newState?.block) {
-            val blockEntity = world?.getBlockEntity(pos)
-            if (blockEntity is ResetTableEntity) {
-                ItemScatterer.spawn(world, pos, blockEntity)
-                world.updateComparators(pos, this)
-            }
-            super.onStateReplaced(state, world, pos, newState, moved)
-        }
+    override fun onStateReplaced(state: BlockState?, world: ServerWorld?, pos: BlockPos?, moved: Boolean) {
+        ItemScatterer.onStateReplaced(state, world, pos)
     }
 
     override fun getCodec(): MapCodec<out BlockWithEntity> {
