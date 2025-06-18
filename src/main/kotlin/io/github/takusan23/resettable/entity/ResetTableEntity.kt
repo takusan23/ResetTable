@@ -11,12 +11,12 @@ import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.inventory.Inventories
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.registry.RegistryWrapper
 import net.minecraft.screen.NamedScreenHandlerFactory
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.server.world.ServerWorld
+import net.minecraft.storage.ReadView
+import net.minecraft.storage.WriteView
 import net.minecraft.text.Text
 import net.minecraft.util.collection.DefaultedList
 import net.minecraft.util.math.BlockPos
@@ -86,15 +86,15 @@ class ResetTableEntity(
     }
 
     /** インベントリを保存する */
-    override fun writeNbt(nbt: NbtCompound?, registryLookup: RegistryWrapper.WrapperLookup?) {
-        super.writeNbt(nbt, registryLookup)
-        Inventories.readNbt(nbt, this.inventory, registryLookup)
+    override fun writeData(view: WriteView?) {
+        super.writeData(view)
+        Inventories.writeData(view,this.inventory)
     }
 
     /** 保存したインベントリを取り出す */
-    override fun readNbt(nbt: NbtCompound?, registryLookup: RegistryWrapper.WrapperLookup?) {
-        super.readNbt(nbt, registryLookup)
-        Inventories.writeNbt(nbt, this.inventory, registryLookup)
+    override fun readData(view: ReadView?) {
+        super.readData(view)
+        Inventories.readData(view,this.inventory)
     }
 
     override fun getDisplayName(): Text {

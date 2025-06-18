@@ -129,7 +129,7 @@ class ResetTableScreenHandler(
         // なんで戻せない理由をここで判断しているかというと、クライアント側へ送る際に PlayerEntity が必要そうで、markDirty には無い。
         // ちなみに getResetItemStack() が空の場合はそれ用のエラーになりますが、GUI 側で表示しないようにしているので、特に分岐せずクライアント側へ送ります。
         val verifyResult = ResetTableTool.verifyResultItemRecipe(
-            serverWorld = player.serverWorld,
+            serverWorld = player.world,
             resultItemStack = getResetItemStack()
         )
         ServerPlayNetworking.send(player, ResetTableErrorPayload(blockPos, verifyResult))

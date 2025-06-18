@@ -1,5 +1,6 @@
 package io.github.takusan23.resettable.tool
 
+import io.github.takusan23.resettable.tool.ResetTableTool.verifyResultItemRecipe
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
 import net.minecraft.enchantment.EnchantmentHelper
 import net.minecraft.item.ItemStack
@@ -8,15 +9,16 @@ import net.minecraft.recipe.ShapedRecipe
 import net.minecraft.recipe.display.SlotDisplayContexts
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.text.Text
+import net.minecraft.util.DyeColor
 
 /** このMODの目的となる作ったアイテムを戻すための関数がある */
 object ResetTableTool {
 
     /** 赤色カラーコード */
-    private const val COLOR_RED = 0xFF0000
+    private val COLOR_RED = DyeColor.RED.signColor
 
     /** 青色カラーコード */
-    private const val COLOR_BLUE = 0x0000FF
+    private val COLOR_BLUE = DyeColor.BLUE.signColor
 
     /**
      * [verifyResultItemRecipe]のレスポンス
