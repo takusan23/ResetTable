@@ -8,12 +8,11 @@ import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
 
-
 /**
  * 実際に描画するGUIのためのクラス。
  * 多分クライアント側しか呼ばれない。
  *
- * [handler]はgetterは動くけど、setter系はまじで動かない。
+ * [net.minecraft.client.gui.screen.ingame.HandledScreen.handler]はgetterは動くけど、setter系はまじで動かない。
  */
 class ResetTableScreen(
     private val resetTableScreenHandler: ResetTableScreenHandler?,

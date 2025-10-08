@@ -1,11 +1,11 @@
 {
   "required": true,
-  "package": "io.github.takusan23.resettable.mixin",
+  "package": "io.github.takusan23.resettable.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ExampleMixin"
   ],
   "client": [
+    "ExampleClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1

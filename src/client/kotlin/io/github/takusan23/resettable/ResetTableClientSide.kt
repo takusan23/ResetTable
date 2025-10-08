@@ -1,7 +1,7 @@
 package io.github.takusan23.resettable
 
-import io.github.takusan23.resettable.network.ResetTableErrorPayload
 import io.github.takusan23.resettable.screen.ResetTableScreen
+import io.github.takusan23.resettable.network.ResetTableErrorPayload
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import io.github.takusan23.resettable.screen.ResetTableScreenHandlers
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking

@@ -13,6 +13,7 @@ import net.minecraft.util.ActionResult
 import net.minecraft.util.ItemScatterer
 import net.minecraft.util.hit.BlockHitResult
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.Direction
 import net.minecraft.world.World
 
 
@@ -56,8 +57,8 @@ class ResetTableBlock(settings: Settings?) : BlockWithEntity(settings) {
         return true
     }
 
-    override fun getComparatorOutput(state: BlockState?, world: World, pos: BlockPos?): Int {
-        return ScreenHandler.calculateComparatorOutput(world.getBlockEntity(pos))
+    override fun getComparatorOutput(state: BlockState?, world: World?, pos: BlockPos?, direction: Direction?): Int {
+        return ScreenHandler.calculateComparatorOutput(world?.getBlockEntity(pos))
     }
 
     companion object {
