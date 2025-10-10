@@ -10,7 +10,7 @@
 ホッパーで搬入、搬出機能もあります  
 ![Imgur](https://imgur.com/eBSK2rK.png)
 
-1.21.9 にも対応しました
+1.21.10 にも対応しました
 
 ![Imgur](https://imgur.com/LaRQlxx.png)
 
@@ -18,11 +18,11 @@
 
 - Fabric API
   - https://www.curseforge.com/minecraft/mc-mods/fabric-api/files
-  - `0.134.0+1.21.9`以降
+  - `0.135.0+1.21.10`以降
 - Fabric Language Kotlin
   - Kotlinという言語で書かれたため、他のMODと違い必要になる。
   - https://www.curseforge.com/minecraft/mc-mods/fabric-language-kotlin/files
-  - `1.13.4+kotlin.2.2.0`以降
+  - `1.13.6+kotlin.2.2.20`以降
 - Mod本体
   - https://www.curseforge.com/minecraft/mc-mods/resettable
 
