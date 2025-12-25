@@ -35,7 +35,7 @@ import net.minecraft.util.math.Direction
  * */
 class ResetTableEntity(
     pos: BlockPos,
-    state: BlockState,
+    state: BlockState
 ) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), NamedScreenHandlerFactory, ExtendedScreenHandlerFactory<ResetTableScreenHandlerServerClientData>, ImplementedInventory, SidedInventory {
 
     /**
@@ -88,13 +88,13 @@ class ResetTableEntity(
     /** インベントリを保存する */
     override fun writeData(view: WriteView?) {
         super.writeData(view)
-        Inventories.writeData(view,this.inventory)
+        Inventories.writeData(view, this.inventory)
     }
 
     /** 保存したインベントリを取り出す */
     override fun readData(view: ReadView?) {
         super.readData(view)
-        Inventories.readData(view,this.inventory)
+        Inventories.readData(view, this.inventory)
     }
 
     override fun getDisplayName(): Text {
@@ -107,7 +107,7 @@ class ResetTableEntity(
      *
      * クライアントに贈りたいデータをここで詰めておく。
      * */
-    override fun getScreenOpeningData(player: ServerPlayerEntity?): ResetTableScreenHandlerServerClientData {
+    override fun getScreenOpeningData(p0: ServerPlayerEntity): ResetTableScreenHandlerServerClientData {
         // クライアント側（GUI）でブロックの位置を知りたいので渡しておく
         return ResetTableScreenHandlerServerClientData(pos)
     }

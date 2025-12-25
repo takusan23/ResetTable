@@ -1,7 +1,7 @@
 plugins {
-    id 'fabric-loom' version "${loom_version}"
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
     id 'maven-publish'
-    id "org.jetbrains.kotlin.jvm" version "2.2.20"
+    id "org.jetbrains.kotlin.jvm" version "2.3.0"
 }
 
 version = project.mod_version
@@ -23,7 +23,7 @@ loom {
     splitEnvironmentSourceSets()
 
     mods {
-        "resettable" {
+        "clickmanaita" {
             sourceSet sourceSets.main
             sourceSet sourceSets.client
         }
@@ -74,7 +74,7 @@ jar {
     inputs.property "archivesName", project.base.archivesName
 
     from("LICENSE") {
-        rename { "${it}_${inputs.properties.archivesName}"}
+        rename { "${it}_${inputs.properties.archivesName}" }
     }
 }
 
