@@ -1,14 +1,14 @@
 package io.github.takusan23.resettable.block
 
-import net.minecraft.block.AbstractBlock
-import net.minecraft.block.MapColor
-import net.minecraft.block.enums.NoteBlockInstrument
-import net.minecraft.registry.Registries
-import net.minecraft.registry.Registry
-import net.minecraft.registry.RegistryKey
-import net.minecraft.registry.RegistryKeys
-import net.minecraft.sound.BlockSoundGroup
-import net.minecraft.util.Identifier
+import net.minecraft.world.level.block.state.BlockBehaviour
+import net.minecraft.world.level.material.MapColor
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.core.Registry
+import net.minecraft.resources.ResourceKey
+import net.minecraft.core.registries.Registries
+import net.minecraft.world.level.block.SoundType
+import net.minecraft.resources.Identifier
 
 /**
  * このMODで追加するブロック一覧
@@ -16,17 +16,17 @@ import net.minecraft.util.Identifier
 object ResetTableBlocks {
 
     // ブロック ID。アイテムブロックで使うので public
-    val ID_RESET_TABLE_BLOCK = Identifier.of("resettable", "reset_table_block")
+    val ID_RESET_TABLE_BLOCK = Identifier.fromNamespaceAndPath("resettable", "reset_table_block")
 
     // レジストリキー
-    private val KEY_RESET_TABLE_BLOCK = RegistryKey.of(RegistryKeys.BLOCK, ID_RESET_TABLE_BLOCK)
+    private val KEY_RESET_TABLE_BLOCK = ResourceKey.create(Registries.BLOCK, ID_RESET_TABLE_BLOCK)
 
     /** リセットテーブルブロック */
-    val RESET_TABLE_BLOCK = ResetTableBlock(AbstractBlock.Settings.create().mapColor(MapColor.BLACK).instrument(NoteBlockInstrument.BASS).strength(2.5F).sounds(BlockSoundGroup.WOOD).burnable().registryKey(KEY_RESET_TABLE_BLOCK))
+    val RESET_TABLE_BLOCK = ResetTableBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).instrument(NoteBlockInstrument.BASS).strength(2.5F).sound(SoundType.WOOD).ignitedByLava().setId(KEY_RESET_TABLE_BLOCK))
 
     /** ブロックを追加する */
     fun registry() {
-        Registry.register(Registries.BLOCK, KEY_RESET_TABLE_BLOCK, RESET_TABLE_BLOCK)
+        Registry.register(BuiltInRegistries.BLOCK, KEY_RESET_TABLE_BLOCK, RESET_TABLE_BLOCK)
     }
 
 }

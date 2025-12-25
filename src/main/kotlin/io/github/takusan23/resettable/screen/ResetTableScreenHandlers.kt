@@ -1,8 +1,8 @@
 package io.github.takusan23.resettable.screen
 
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
+import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.codec.StreamCodec
 
 /**
  * このMODで使うスクリーンハンドラー
@@ -13,7 +13,7 @@ object ResetTableScreenHandlers {
      * [ResetTableScreenHandlerServerClientData] を [RegistryByteBuf] 経由でシリアライズ・デシリアライズできるやつ。
      * なんか自分で書かないといけなくなった。。。
      */
-    private val PACKET_CODEC = PacketCodec.of<RegistryByteBuf, ResetTableScreenHandlerServerClientData>(
+    private val PACKET_CODEC = StreamCodec.ofMember<RegistryFriendlyByteBuf, ResetTableScreenHandlerServerClientData>(
         /* encoder = */ { data, buf -> ResetTableScreenHandlerServerClientData.write(data, buf) },
         /* decoder = */ { buf -> ResetTableScreenHandlerServerClientData.read(buf) }
     )

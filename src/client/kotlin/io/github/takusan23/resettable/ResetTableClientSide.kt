@@ -5,10 +5,10 @@ import io.github.takusan23.resettable.network.ResetTableErrorPayload
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import io.github.takusan23.resettable.screen.ResetTableScreenHandlers
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.minecraft.client.gui.screen.ingame.HandledScreens
-import net.minecraft.registry.Registries
-import net.minecraft.registry.Registry
-import net.minecraft.util.Identifier
+import net.minecraft.client.gui.screens.MenuScreens
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.core.Registry
+import net.minecraft.resources.Identifier
 
 
 /**
@@ -20,8 +20,8 @@ import net.minecraft.util.Identifier
 fun clientSideInit() {
 
     // クライアント側のみGUIの画面をFabricに登録する
-    Registry.register(Registries.SCREEN_HANDLER, Identifier.of("resettable", "reset_table_block"), ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER)
-    HandledScreens.register(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER) { handler, inventory, title ->
+    Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath("resettable", "reset_table_block"), ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER)
+    MenuScreens.register(ResetTableScreenHandlers.RESET_TABLE_SCREEN_HANDLER) { handler, inventory, title ->
         ResetTableScreen(handler, inventory, title)
     }
 
@@ -30,7 +30,7 @@ fun clientSideInit() {
         context.client().execute {
             // ネットワーク経由でイベントが来た
             // 今表示されている画面がリセットテーブルの GUI の場合はエラーを出す
-            val resetTableScreenHandler = (context.player().currentScreenHandler as? ResetTableScreenHandler)
+            val resetTableScreenHandler = (context.player().containerMenu as? ResetTableScreenHandler)
             if (resetTableScreenHandler != null) {
                 resetTableScreenHandler.recipeVerifyResult = payload.verifyResult
             }

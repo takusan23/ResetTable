@@ -4,23 +4,23 @@ import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import io.github.takusan23.resettable.screen.ResetTableScreenHandlerServerClientData
 import io.github.takusan23.resettable.tool.ResetTableTool
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
-import net.minecraft.block.BlockState
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.entity.player.PlayerInventory
-import net.minecraft.inventory.Inventories
-import net.minecraft.inventory.SidedInventory
-import net.minecraft.item.ItemStack
-import net.minecraft.screen.NamedScreenHandlerFactory
-import net.minecraft.screen.ScreenHandler
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.storage.ReadView
-import net.minecraft.storage.WriteView
-import net.minecraft.text.Text
-import net.minecraft.util.collection.DefaultedList
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.core.NonNullList
+import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.ContainerHelper
+import net.minecraft.world.MenuProvider
+import net.minecraft.world.WorldlyContainer
+import net.minecraft.world.entity.player.Inventory
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.AbstractContainerMenu
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.storage.ValueInput
+import net.minecraft.world.level.storage.ValueOutput
 
 
 /**
@@ -36,14 +36,14 @@ import net.minecraft.util.math.Direction
 class ResetTableEntity(
     pos: BlockPos,
     state: BlockState
-) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), NamedScreenHandlerFactory, ExtendedScreenHandlerFactory<ResetTableScreenHandlerServerClientData>, ImplementedInventory, SidedInventory {
+) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), MenuProvider, ExtendedScreenHandlerFactory<ResetTableScreenHandlerServerClientData>, ImplementedInventory, WorldlyContainer {
 
     /**
      * リセットテーブルのインベントリ
      *
      * 3x3 の分と還元スロットのために +1
      * */
-    private val inventory = DefaultedList.ofSize(10, ItemStack.EMPTY)
+    private val inventory = NonNullList.withSize(10, ItemStack.EMPTY)
 
     /** アイテム変更コールバックの配列 */
     private val itemChangeCallbackList = mutableListOf<() -> Unit>()
@@ -53,18 +53,18 @@ class ResetTableEntity(
      *
      * @return 保持しているアイテム
      * */
-    override fun getItems(): DefaultedList<ItemStack> {
+    override fun getItems(): NonNullList<ItemStack> {
         return inventory
     }
 
     /** GUIを返す？ */
-    override fun createMenu(syncId: Int, playerInventory: PlayerInventory, player: PlayerEntity?): ScreenHandler {
-        return ResetTableScreenHandler(syncId, playerInventory, this)
+    override fun createMenu(i: Int, inventory: Inventory, player: Player): AbstractContainerMenu? {
+        return ResetTableScreenHandler(i, inventory, this)
     }
 
     /** ホッパー等からアクセスできるスロットを返す */
-    override fun getAvailableSlots(side: Direction?): IntArray {
-        return when (side) {
+    override fun getSlotsForFace(direction: Direction): IntArray {
+        return when (direction) {
             Direction.UP -> intArrayOf(RESET_TABLE_RESET_ITEM_SLOT)
             Direction.DOWN -> (0..8).toList().toIntArray()
             else -> intArrayOf()
@@ -72,34 +72,34 @@ class ResetTableEntity(
     }
 
     /** アイテムをホッパー等から受け付けるか */
-    override fun canInsert(slot: Int, stack: ItemStack?, dir: Direction?): Boolean {
+    override fun canPlaceItemThroughFace(i: Int, itemStack: ItemStack, direction: Direction?): Boolean {
         // ItemStackが引数で貰えますが、常に count=1 で足りているかわからないため、
         // いま還元スロットに入っているアイテムと同じ場合と空っぽの場合に受け付けます
-        val resetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
-        return resetSlotItemStack.isEmpty || resetSlotItemStack.isOf(stack?.item)
+        val resetSlotItemStack = getItem(RESET_TABLE_RESET_ITEM_SLOT)
+        return resetSlotItemStack.isEmpty || resetSlotItemStack.`is`(itemStack.item)
     }
 
     /** アイテムを取り出せるか */
-    override fun canExtract(slot: Int, stack: ItemStack?, dir: Direction?): Boolean {
+    override fun canTakeItemThroughFace(i: Int, itemStack: ItemStack, direction: Direction): Boolean {
         // 3x3 の範囲内ならok
-        return slot in 0..8
+        return i in 0..8
     }
 
     /** インベントリを保存する */
-    override fun writeData(view: WriteView?) {
-        super.writeData(view)
-        Inventories.writeData(view, this.inventory)
+    override fun saveAdditional(valueOutput: ValueOutput) {
+        super.saveAdditional(valueOutput)
+        ContainerHelper.saveAllItems(valueOutput, this.inventory)
     }
 
     /** 保存したインベントリを取り出す */
-    override fun readData(view: ReadView?) {
-        super.readData(view)
-        Inventories.readData(view, this.inventory)
+    override fun loadAdditional(valueInput: ValueInput) {
+        super.loadAdditional(valueInput)
+        ContainerHelper.loadAllItems(valueInput, this.inventory)
     }
 
-    override fun getDisplayName(): Text {
+    override fun getDisplayName(): Component {
         // ブロックのローカライズテキストをそのまま利用する
-        return Text.translatable(cachedState.block.translationKey)
+        return Component.translatable(blockState.block.descriptionId)
     }
 
     /**
@@ -107,9 +107,9 @@ class ResetTableEntity(
      *
      * クライアントに贈りたいデータをここで詰めておく。
      * */
-    override fun getScreenOpeningData(p0: ServerPlayerEntity): ResetTableScreenHandlerServerClientData {
+    override fun getScreenOpeningData(p0: ServerPlayer): ResetTableScreenHandlerServerClientData {
         // クライアント側（GUI）でブロックの位置を知りたいので渡しておく
-        return ResetTableScreenHandlerServerClientData(pos)
+        return ResetTableScreenHandlerServerClientData(worldPosition)
     }
 
     /**
@@ -117,7 +117,7 @@ class ResetTableEntity(
      *
      * ここでレシピ検索をしている
      * */
-    override fun markDirty() {
+    override fun setChanged() {
         updateResultItems()
         itemChangeCallbackList.forEach { it.invoke() }
     }
@@ -128,8 +128,8 @@ class ResetTableEntity(
      * 既に材料スロットに入っている場合は戻さない、けど前回と同じレシピだった場合は戻す
      * */
     private fun updateResultItems() {
-        val serverWorld = (world as? ServerWorld) ?: return
-        val currentResetSlotItemStack = getStack(RESET_TABLE_RESET_ITEM_SLOT)
+        val serverWorld = (level as? ServerLevel) ?: return
+        val currentResetSlotItemStack = getItem(RESET_TABLE_RESET_ITEM_SLOT)
         val currentRecipeResolveDataList = ResetTableTool.findCraftingMaterial(serverWorld, currentResetSlotItemStack)
         if (isMaterialSlotEmpty()) {
             currentRecipeResolveDataList
@@ -137,10 +137,10 @@ class ResetTableEntity(
                 ?.also { recipeResolveData ->
                     recipeResolveData
                         .recipePatternFormattedList
-                        .forEachIndexed { index, itemStack -> setStack(index, itemStack) }
+                        .forEachIndexed { index, itemStack -> setItem(index, itemStack) }
                     recipeResolveData
                         .resolveSlotItemStack
-                        .also { setStack(RESET_TABLE_RESET_ITEM_SLOT, it) }
+                        .also { setItem(RESET_TABLE_RESET_ITEM_SLOT, it) }
                 }
         } else {
             // スロット空いてないけど、今のスロットと同じ中身だった場合
@@ -153,9 +153,9 @@ class ResetTableEntity(
                     // アイテム数を増やす
                     getMaterialSlotItemStackList()
                         .map { it.copy().apply { count += recipeResolveData.recipePatternFormattedList[0].count } }
-                        .forEachIndexed { index, itemStack -> setStack(index, itemStack) }
+                        .forEachIndexed { index, itemStack -> setItem(index, itemStack) }
                     // 割り切れなかったアイテムを還元スロットへ
-                    setStack(RESET_TABLE_RESET_ITEM_SLOT, recipeResolveData.resolveSlotItemStack)
+                    setItem(RESET_TABLE_RESET_ITEM_SLOT, recipeResolveData.resolveSlotItemStack)
                 }
         }
     }
@@ -195,7 +195,7 @@ class ResetTableEntity(
      * @return 3x3 のアイテムスロット
      * */
     private fun getMaterialSlotItemStackList(): List<ItemStack> {
-        return (0..8).map { getStack(it) }
+        return (0..8).map { getItem(it) }
     }
 
     /**

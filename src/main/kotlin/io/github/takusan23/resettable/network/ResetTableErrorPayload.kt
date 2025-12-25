@@ -1,10 +1,10 @@
 package io.github.takusan23.resettable.network
 
 import io.github.takusan23.resettable.tool.ResetTableTool
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.packet.CustomPayload
-import net.minecraft.util.math.BlockPos
+import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.codec.StreamCodec
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import net.minecraft.core.BlockPos
 
 /**
  * リセットテーブルできない、元のレシピに戻せないエラーをネットワークでやり取りするデータクラス。
@@ -17,15 +17,15 @@ import net.minecraft.util.math.BlockPos
 data class ResetTableErrorPayload(
     val blockPos: BlockPos,
     val verifyResult: ResetTableTool.VerifyResult
-) : CustomPayload {
+) : CustomPacketPayload {
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = ID
 
     companion object {
 
-        val ID = CustomPayload.Id<ResetTableErrorPayload>(ResetTableNetworkIds.RESET_TABLE_ERROR_NETWORK_ID)
+        val ID = CustomPacketPayload.Type<ResetTableErrorPayload>(ResetTableNetworkIds.RESET_TABLE_ERROR_NETWORK_ID)
 
-        val CODEC = PacketCodec.of<RegistryByteBuf, ResetTableErrorPayload>(
+        val CODEC = StreamCodec.ofMember<RegistryFriendlyByteBuf, ResetTableErrorPayload>(
             /* encoder = */ { data, buf ->
                 buf.writeBlockPos(data.blockPos)
                 buf.writeInt(data.verifyResult.ordinal)

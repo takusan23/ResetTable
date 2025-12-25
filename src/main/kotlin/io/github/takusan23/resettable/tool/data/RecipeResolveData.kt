@@ -1,7 +1,7 @@
 package io.github.takusan23.resettable.tool.data
 
 import io.github.takusan23.resettable.tool.ResetTableTool
-import net.minecraft.item.ItemStack
+import net.minecraft.world.item.ItemStack
 
 /**
  * [ResetTableTool.findCraftingMaterial]の返り値

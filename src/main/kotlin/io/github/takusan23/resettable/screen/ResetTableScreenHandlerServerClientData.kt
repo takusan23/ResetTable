@@ -1,7 +1,7 @@
 package io.github.takusan23.resettable.screen
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.util.math.BlockPos
+import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.core.BlockPos
 
 /**
  * ブロックの位置を[ResetTableScreenHandler]へ渡すための
@@ -17,12 +17,12 @@ data class ResetTableScreenHandlerServerClientData(
     companion object {
 
         /** [RegistryByteBuf]へ書き込む */
-        fun write(data: ResetTableScreenHandlerServerClientData, buf: RegistryByteBuf) {
+        fun write(data: ResetTableScreenHandlerServerClientData, buf: RegistryFriendlyByteBuf) {
             buf.writeBlockPos(data.blockPos)
         }
 
         /** [RegistryByteBuf]から読み出す */
-        fun read(buf: RegistryByteBuf): ResetTableScreenHandlerServerClientData {
+        fun read(buf: RegistryFriendlyByteBuf): ResetTableScreenHandlerServerClientData {
             return ResetTableScreenHandlerServerClientData(buf.readBlockPos())
         }
 

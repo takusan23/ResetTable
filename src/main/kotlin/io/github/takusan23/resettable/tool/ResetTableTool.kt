@@ -2,23 +2,24 @@ package io.github.takusan23.resettable.tool
 
 import io.github.takusan23.resettable.tool.ResetTableTool.verifyResultItemRecipe
 import io.github.takusan23.resettable.tool.data.RecipeResolveData
-import net.minecraft.enchantment.EnchantmentHelper
-import net.minecraft.item.ItemStack
-import net.minecraft.recipe.CraftingRecipe
-import net.minecraft.recipe.ShapedRecipe
-import net.minecraft.recipe.display.SlotDisplayContexts
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.text.Text
-import net.minecraft.util.DyeColor
+import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.item.DyeColor
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.crafting.CraftingInput
+import net.minecraft.world.item.crafting.CraftingRecipe
+import net.minecraft.world.item.crafting.ShapedRecipe
+import net.minecraft.world.item.crafting.display.SlotDisplayContext
+import net.minecraft.world.item.enchantment.EnchantmentHelper
 
 /** このMODの目的となる作ったアイテムを戻すための関数がある */
 object ResetTableTool {
 
     /** 赤色カラーコード */
-    private val COLOR_RED = DyeColor.RED.signColor
+    private val COLOR_RED = DyeColor.RED.textColor
 
     /** 青色カラーコード */
-    private val COLOR_BLUE = DyeColor.BLUE.signColor
+    private val COLOR_BLUE = DyeColor.BLUE.textColor
 
     /**
      * [verifyResultItemRecipe]のレスポンス
@@ -50,8 +51,8 @@ object ResetTableTool {
     }
 
     /** craft メソッド、多分定形、不定形レシピ以外は null で呼び出せない。ので try-catch */
-    private fun CraftingRecipe.craftOrNull(): ItemStack? = runCatching {
-        craft(null, null)
+    private fun CraftingRecipe.craftOrNull(level: ServerLevel): ItemStack? = runCatching {
+        assemble(CraftingInput.EMPTY, level.registryAccess())
     }.getOrNull()
 
     /**
@@ -61,15 +62,15 @@ object ResetTableTool {
      * @param resetItemStack 探すアイテム
      * @return レシピの配列
      */
-    private fun findRecipe(world: ServerWorld, resetItemStack: ItemStack): List<CraftingRecipe> {
-        val recipeManager = world.recipeManager.values()
+    private fun findRecipe(world: ServerLevel, resetItemStack: ItemStack): List<CraftingRecipe> {
+        val recipeManager = world.recipeAccess().recipes
         return recipeManager
             // ID と Recipe の Map になってる、Recipe だけにする
             .map { it.value }
             // 作業台だけ
             .filterIsInstance<CraftingRecipe>()
             // クラフトレシピを完成品から探す
-            .filter { it.craftOrNull()?.item == resetItemStack.item }
+            .filter { it.craftOrNull(world)?.item == resetItemStack.item }
     }
 
     /**
@@ -79,10 +80,10 @@ object ResetTableTool {
      * @param resultItemStack 検証するアイテム
      * @return [VerifyResult]
      */
-    fun verifyResultItemRecipe(serverWorld: ServerWorld, resultItemStack: ItemStack): VerifyResult {
+    fun verifyResultItemRecipe(serverWorld: ServerLevel, resultItemStack: ItemStack): VerifyResult {
         val recipeList = findRecipe(serverWorld, resultItemStack)
         val availableRecipe = recipeList.firstOrNull {
-            val craftRecipeCount = it.craftOrNull()?.count
+            val craftRecipeCount = it.craftOrNull(serverWorld)?.count
             if (craftRecipeCount != null) craftRecipeCount <= resultItemStack.count else false
         }
 
@@ -96,13 +97,13 @@ object ResetTableTool {
 
         // 元のアイテムと比較して、何かしらデータコンポーネント（NBT）が付与されている場合は true
         // エンチャント済みとか、シュルカーボックスの中身が入っているとか。元のアイテムからデータがある場合はダメ
-        val hasDiffOriginItem = !ItemStack.areItemsAndComponentsEqual(resultItemStack, ItemStack(resultItemStack.item))
+        val hasDiffOriginItem = !ItemStack.isSameItemSameComponents(resultItemStack, ItemStack(resultItemStack.item))
 
         return when {
             resultItemStack.isEmpty -> VerifyResult.ERROR_EMPTY_ITEM_STACK
             recipeList.isEmpty() -> VerifyResult.ERROR_NOT_FOUND_RECIPE
             resultItemStack.isDamaged -> VerifyResult.ERROR_ITEM_DAMAGED
-            !EnchantmentHelper.getEnchantments(resultItemStack).isEmpty -> VerifyResult.ERROR_ENCHANTED_ITEM
+            !EnchantmentHelper.getEnchantmentsForCrafting(resultItemStack).isEmpty -> VerifyResult.ERROR_ENCHANTED_ITEM
             availableRecipe == null -> VerifyResult.ERROR_REQUIRE_STACK_COUNT
             hasDiffOriginItem -> VerifyResult.ERROR_HAS_METADATA
             else -> VerifyResult.SUCCESS
@@ -116,7 +117,7 @@ object ResetTableTool {
      * @param resetItemStack 戻したいアイテム
      * @return [verifyResultItemRecipe]で成功を返さなかった場合はnull
      */
-    fun findCraftingMaterial(world: ServerWorld, resetItemStack: ItemStack): List<RecipeResolveData>? {
+    fun findCraftingMaterial(world: ServerLevel, resetItemStack: ItemStack): List<RecipeResolveData>? {
         // 検証した結果もとに戻せない場合はnullを返す
         if (verifyResultItemRecipe(world, resetItemStack) != VerifyResult.SUCCESS) return null
 
@@ -125,14 +126,14 @@ object ResetTableTool {
             // スタック数を確認する
             // 同じ完成品のレシピで複数返す場合に備えて
             .filter {
-                val resultItem = it.craftOrNull()
+                val resultItem = it.craftOrNull(world)
                 if (resultItem != null) resultItem.count <= resetItemStack.count else false
             }
 
-        val createParameters = SlotDisplayContexts.createParameters(world)
+        val createParameters = SlotDisplayContext.fromLevel(world)
         val recipeResolvedDataList = recipeList.map { recipe ->
             val resetItemStackCount = resetItemStack.count
-            val recipeCreateItemCount = recipe.craftOrNull()?.count ?: 0
+            val recipeCreateItemCount = recipe.craftOrNull(world)?.count ?: 0
             // 0で割ることがあるらしい
             if (resetItemStackCount >= 1 && recipeCreateItemCount >= 1) {
                 // 割り算して何個戻せるか
@@ -144,17 +145,17 @@ object ResetTableTool {
 
                 // 定形レシピの場合は材料スロット(3x3)で正しいアイテムの配列に置き換える
                 if (recipe is ShapedRecipe) {
-                    val ingredientPlacement = recipe.ingredientPlacement
+                    val ingredientPlacement = recipe.placementInfo()
                     // placementSlots に数字か null が入ってて、数字の場合は placements 配列のインデックスとして使えば良い。
                     // null は empty
-                    val shapedRecipeList = ingredientPlacement.placementSlots.map { placerOutputPositionOrNegative ->
+                    val shapedRecipeList = ingredientPlacement.slotsToIngredientIndex().map { placerOutputPositionOrNegative ->
                         // ingredients でのインデックス
                         if (placerOutputPositionOrNegative == -1) {
                             // 空のスロットの場合は -1
                             ItemStack.EMPTY
                         } else {
                             // findFirst() している。例えばチェストとかはオークの木材以外でも作れるので getStacks() には木の種類が入ってる
-                            ingredientPlacement.ingredients[placerOutputPositionOrNegative].toDisplay().getStacks(createParameters)
+                            ingredientPlacement.ingredients()[placerOutputPositionOrNegative].display().resolveForStacks(createParameters)
                                 .first()
                                 .apply { count = craftCount }
                         }
@@ -194,8 +195,8 @@ object ResetTableTool {
                     }
                     RecipeResolveData(recipePatternList, notResolveItemStack)
                 } else {
-                    val materialList = recipe.ingredientPlacement.ingredients.map { ingredient ->
-                        ingredient.toDisplay().getStacks(createParameters)
+                    val materialList = recipe.placementInfo().ingredients().map { ingredient ->
+                        ingredient.display().resolveForStacks(createParameters)
                             .first()
                             .apply { count = craftCount }
                     }
@@ -217,7 +218,7 @@ object ResetTableTool {
         if (result == VerifyResult.ERROR_EMPTY_ITEM_STACK) {
             return null
         }
-        return Text.translatable(result.localizeKey).string to result.textColor
+        return Component.translatable(result.localizeKey).string to result.textColor
     }
 
 }

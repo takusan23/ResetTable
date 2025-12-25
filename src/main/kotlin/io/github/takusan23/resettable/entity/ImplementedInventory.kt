@@ -1,10 +1,10 @@
 package io.github.takusan23.resettable.entity
 
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.inventory.Inventories
-import net.minecraft.inventory.Inventory
-import net.minecraft.item.ItemStack
-import net.minecraft.util.collection.DefaultedList
+import net.minecraft.core.NonNullList
+import net.minecraft.world.Container
+import net.minecraft.world.ContainerHelper
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
 
 
 /**
@@ -12,7 +12,7 @@ import net.minecraft.util.collection.DefaultedList
  *
  * パクった：[https://fabricmc.net/wiki/tutorial:inventory]
  * */
-fun interface ImplementedInventory : Inventory {
+fun interface ImplementedInventory : Container {
 
     companion object {
         /**
@@ -20,7 +20,7 @@ fun interface ImplementedInventory : Inventory {
          *
          * @param items アイテムスタックの配列
          * */
-        fun from(items: DefaultedList<ItemStack>): ImplementedInventory {
+        fun from(items: NonNullList<ItemStack>): ImplementedInventory {
             // SAM変換
             return ImplementedInventory { items }
         }
@@ -31,7 +31,7 @@ fun interface ImplementedInventory : Inventory {
          * @param size 大きさ
          * */
         fun fromSize(size: Int): ImplementedInventory {
-            return from(DefaultedList.ofSize(size, ItemStack.EMPTY))
+            return from(NonNullList.withSize(size, ItemStack.EMPTY))
         }
     }
 
@@ -40,13 +40,13 @@ fun interface ImplementedInventory : Inventory {
      *
      * 呼び出されるたびに同じインスタンスを返してね。
      * */
-    fun getItems(): DefaultedList<ItemStack>
+    fun getItems(): NonNullList<ItemStack>
 
 
     /**
      * インベントリの大きさを返す
      * */
-    override fun size(): Int {
+    override fun getContainerSize(): Int {
         return getItems().size
     }
 
@@ -66,21 +66,21 @@ fun interface ImplementedInventory : Inventory {
      * @param slot 位置
      * @return 位置のアイテムスタック
      */
-    override fun getStack(slot: Int): ItemStack {
+    override fun getItem(slot: Int): ItemStack {
         return getItems()[slot]
     }
 
     /**
      * インベントリからアイテムスタックを削除します
      *
-     * @param slot  削除するスロット
-     * @param count 削除するアイテム数
+     * @param i 削除するスロット
+     * @param j 削除するアイテム数
      * @return 削除したアイテムスタック
      */
-    override fun removeStack(slot: Int, count: Int): ItemStack? {
-        val result = Inventories.splitStack(getItems(), slot, count)
+    override fun removeItem(i: Int, j: Int): ItemStack {
+        val result = ContainerHelper.removeItem(getItems(), i, j)
         if (!result.isEmpty) {
-            markDirty()
+            setChanged()
         }
         return result
     }
@@ -88,11 +88,11 @@ fun interface ImplementedInventory : Inventory {
     /**
      * 指定したスロットのアイテムを削除します
      *
-     * @param slot 削除するスロット
+     * @param i 削除するスロット
      * @return 削除したアイテム
      */
-    override fun removeStack(slot: Int): ItemStack? {
-        return Inventories.removeStack(getItems(), slot)
+    override fun removeItemNoUpdate(i: Int): ItemStack {
+        return ContainerHelper.takeItem(getItems(), i)
     }
 
     /**
@@ -101,17 +101,17 @@ fun interface ImplementedInventory : Inventory {
      * @param slot 位置
      * @param stack 置き換えるアイテムスタック
      */
-    override fun setStack(slot: Int, stack: ItemStack) {
+    override fun setItem(slot: Int, stack: ItemStack) {
         getItems()[slot] = stack
-        if (stack.count > maxCountPerStack) {
-            stack.count = maxCountPerStack
+        if (stack.count > maxStackSize) {
+            stack.count = maxStackSize
         }
     }
 
     /**
      * クリアする
      * */
-    override fun clear() {
+    override fun clearContent() {
         getItems().clear()
     }
 
@@ -120,14 +120,14 @@ fun interface ImplementedInventory : Inventory {
      *
      * @return アクセスできる場合はtrue
      * */
-    override fun canPlayerUse(player: PlayerEntity?): Boolean {
+    override fun stillValid(player: Player): Boolean {
         return true
     }
 
     /**
      * 継承して使って
      * */
-    override fun markDirty() {
+    override fun setChanged() {
 
     }
 

@@ -2,19 +2,19 @@ package io.github.takusan23.resettable.block
 
 import com.mojang.serialization.MapCodec
 import io.github.takusan23.resettable.entity.ResetTableEntity
-import net.minecraft.block.BlockRenderType
-import net.minecraft.block.BlockState
-import net.minecraft.block.BlockWithEntity
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.screen.ScreenHandler
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.util.ActionResult
-import net.minecraft.util.ItemScatterer
-import net.minecraft.util.hit.BlockHitResult
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.world.World
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.Containers
+import net.minecraft.world.InteractionResult
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.AbstractContainerMenu
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.BaseEntityBlock
+import net.minecraft.world.level.block.RenderShape
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.phys.BlockHitResult
 
 
 /**
@@ -22,49 +22,49 @@ import net.minecraft.world.World
  *
  * @param settings ブロックの設定（硬さとか。適正ツールはJSONを書かないといけないという初見殺し）
  */
-class ResetTableBlock(settings: Settings?) : BlockWithEntity(settings) {
+class ResetTableBlock(settings: Properties) : BaseEntityBlock(settings) {
 
     /** Entityを返す。アイテムを保持するやつ*/
-    override fun createBlockEntity(pos: BlockPos, state: BlockState): BlockEntity {
+    override fun newBlockEntity(pos: BlockPos, state: BlockState): BlockEntity {
         return ResetTableEntity(pos, state)
     }
 
     /** デフォルトだと駄目なのでオーバーライドして返り値を変更する */
-    override fun getRenderType(state: BlockState?): BlockRenderType {
-        return BlockRenderType.MODEL
+    override fun getRenderShape(blockState: BlockState): RenderShape {
+        return RenderShape.MODEL
     }
 
     /** ブロックをクリックしたとき */
-    override fun onUse(state: BlockState?, world: World?, pos: BlockPos?, player: PlayerEntity?, hit: BlockHitResult?): ActionResult {
-        if (world?.isClient == false && state != null) {
+    override fun useWithoutItem(blockState: BlockState, level: Level, blockPos: BlockPos, player: Player, blockHitResult: BlockHitResult): InteractionResult {
+        if (!level.isClientSide) {
             // BlockEntityが手に入るとか
-            val screenHandlerFactory = state.createScreenHandlerFactory(world, pos)
+            val screenHandlerFactory = blockState.getMenuProvider(level, blockPos)
             // クライアント側へGUIを開くようお願いする
-            player?.openHandledScreen(screenHandlerFactory)
+            player.openMenu(screenHandlerFactory)
         }
-        return ActionResult.SUCCESS
+        return InteractionResult.SUCCESS
     }
 
-    override fun onStateReplaced(state: BlockState?, world: ServerWorld?, pos: BlockPos?, moved: Boolean) {
-        ItemScatterer.onStateReplaced(state, world, pos)
+    override fun affectNeighborsAfterRemoval(blockState: BlockState, serverLevel: ServerLevel, blockPos: BlockPos, bl: Boolean) {
+        Containers.updateNeighboursAfterDestroy(blockState, serverLevel, blockPos)
     }
 
-    override fun getCodec(): MapCodec<out BlockWithEntity> {
+    override fun codec(): MapCodec<out BaseEntityBlock> {
         return CODEC
     }
 
-    override fun hasComparatorOutput(state: BlockState?): Boolean {
+    override fun hasAnalogOutputSignal(blockState: BlockState): Boolean {
         return true
     }
 
-    override fun getComparatorOutput(state: BlockState?, world: World?, pos: BlockPos?, direction: Direction?): Int {
-        return ScreenHandler.calculateComparatorOutput(world?.getBlockEntity(pos))
+    override fun getAnalogOutputSignal(blockState: BlockState, level: Level, blockPos: BlockPos, direction: Direction): Int {
+        return AbstractContainerMenu.getRedstoneSignalFromBlockEntity(level.getBlockEntity(blockPos))
     }
 
     companion object {
         // Fabric 曰くまだ内部では使われていない、がとりあえず返す必要があるとのこと
         // https://fabricmc.net/2023/11/30/1203.html
-        private val CODEC = createCodec { settings -> ResetTableBlock(settings) }
+        private val CODEC = simpleCodec { settings -> ResetTableBlock(settings) }
     }
 
 }
