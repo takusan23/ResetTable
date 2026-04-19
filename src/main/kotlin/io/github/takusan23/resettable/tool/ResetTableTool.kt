@@ -51,8 +51,8 @@ object ResetTableTool {
     }
 
     /** craft メソッド、多分定形、不定形レシピ以外は null で呼び出せない。ので try-catch */
-    private fun CraftingRecipe.craftOrNull(level: ServerLevel): ItemStack? = runCatching {
-        assemble(CraftingInput.EMPTY, level.registryAccess())
+    private fun CraftingRecipe.craftOrNull(): ItemStack? = runCatching {
+        assemble(CraftingInput.EMPTY)
     }.getOrNull()
 
     /**
@@ -70,7 +70,7 @@ object ResetTableTool {
             // 作業台だけ
             .filterIsInstance<CraftingRecipe>()
             // クラフトレシピを完成品から探す
-            .filter { it.craftOrNull(world)?.item == resetItemStack.item }
+            .filter { it.craftOrNull()?.item == resetItemStack.item }
     }
 
     /**
@@ -83,7 +83,7 @@ object ResetTableTool {
     fun verifyResultItemRecipe(serverWorld: ServerLevel, resultItemStack: ItemStack): VerifyResult {
         val recipeList = findRecipe(serverWorld, resultItemStack)
         val availableRecipe = recipeList.firstOrNull {
-            val craftRecipeCount = it.craftOrNull(serverWorld)?.count
+            val craftRecipeCount = it.craftOrNull()?.count
             if (craftRecipeCount != null) craftRecipeCount <= resultItemStack.count else false
         }
 
@@ -126,14 +126,14 @@ object ResetTableTool {
             // スタック数を確認する
             // 同じ完成品のレシピで複数返す場合に備えて
             .filter {
-                val resultItem = it.craftOrNull(world)
+                val resultItem = it.craftOrNull()
                 if (resultItem != null) resultItem.count <= resetItemStack.count else false
             }
 
         val createParameters = SlotDisplayContext.fromLevel(world)
         val recipeResolvedDataList = recipeList.map { recipe ->
             val resetItemStackCount = resetItemStack.count
-            val recipeCreateItemCount = recipe.craftOrNull(world)?.count ?: 0
+            val recipeCreateItemCount = recipe.craftOrNull()?.count ?: 0
             // 0で割ることがあるらしい
             if (resetItemStackCount >= 1 && recipeCreateItemCount >= 1) {
                 // 割り算して何個戻せるか

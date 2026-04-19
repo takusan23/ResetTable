@@ -6,8 +6,8 @@ import io.github.takusan23.resettable.entity.ResetTableEntities
 import io.github.takusan23.resettable.item.ResetTableItems
 import io.github.takusan23.resettable.network.ResetTableErrorPayload
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.Registry
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.Identifier
 
 /**
@@ -26,5 +26,5 @@ fun init() {
     // クリエイティブタブの追加
     Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath("resettable", "resettable_creative_tab"), ResetTableCreativeTab.CREATIVE_TAB)
     // ネットワークの追加（クライアント・サーバー間でやり取りする）
-    PayloadTypeRegistry.playS2C().register(ResetTableErrorPayload.ID, ResetTableErrorPayload.CODEC)
+    PayloadTypeRegistry.clientboundPlay().register(ResetTableErrorPayload.ID, ResetTableErrorPayload.CODEC)
 }

@@ -3,7 +3,7 @@ package io.github.takusan23.resettable.entity
 import io.github.takusan23.resettable.screen.ResetTableScreenHandler
 import io.github.takusan23.resettable.screen.ResetTableScreenHandlerServerClientData
 import io.github.takusan23.resettable.tool.ResetTableTool
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.NonNullList
@@ -36,7 +36,7 @@ import net.minecraft.world.level.storage.ValueOutput
 class ResetTableEntity(
     pos: BlockPos,
     state: BlockState
-) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), MenuProvider, ExtendedScreenHandlerFactory<ResetTableScreenHandlerServerClientData>, ImplementedInventory, WorldlyContainer {
+) : BlockEntity(ResetTableEntities.RESET_TABLE_BLOCK_ENTITY, pos, state), MenuProvider, ExtendedMenuProvider<ResetTableScreenHandlerServerClientData>, ImplementedInventory, WorldlyContainer {
 
     /**
      * リセットテーブルのインベントリ

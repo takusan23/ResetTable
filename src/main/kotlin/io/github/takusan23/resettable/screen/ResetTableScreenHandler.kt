@@ -12,7 +12,7 @@ import net.minecraft.world.SimpleContainer
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.AbstractContainerMenu
-import net.minecraft.world.inventory.ClickType
+import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.ItemStack
 
@@ -110,10 +110,10 @@ class ResetTableScreenHandler(
     }
 
     /** イベントリのスロットを押したとき */
-    override fun clicked(i: Int, j: Int, clickType: ClickType, player: Player) {
-        super.clicked(i, j, clickType, player)
+    override fun clicked(slotIndex: Int, buttonNum: Int, containerInput: ContainerInput, player: Player) {
+        super.clicked(slotIndex, buttonNum, containerInput, player)
         // もとに戻したいアイテムのスロットの時のみ
-        if (i != SLOT_RESET_INDEX) return
+        if (slotIndex != SLOT_RESET_INDEX) return
         // 戻せない場合は理由を送信
         sendVerifyResultToClient(player)
     }

@@ -1,6 +1,6 @@
 package io.github.takusan23.resettable.screen
 
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 
@@ -21,7 +21,7 @@ object ResetTableScreenHandlers {
     /**
      * リセットテーブルブロックのエンティティのスクリーンハンドラー
      */
-    val RESET_TABLE_SCREEN_HANDLER = ExtendedScreenHandlerType(
+    val RESET_TABLE_SCREEN_HANDLER = ExtendedMenuType(
         { syncId, inventory, serverClientData -> ResetTableScreenHandler(syncId, inventory, serverClientData) },
         PACKET_CODEC
     )

@@ -16,23 +16,30 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "io.github.takusan23.resettable.ResetTableKt::init"
+      {
+        "value": "io.github.takusan23.resettable.ResetTableKt::init",
+        "adapter": "kotlin"
+      }
     ],
     "client": [
-      "io.github.takusan23.resettable.ResetTableClientSideKt::clientSideInit"
+      {
+        "value": "io.github.takusan23.resettable.ResetTableClientSideKt::clientSideInit",
+        "adapter": "kotlin"
+      }
     ]
   },
   "mixins": [
-    "resettable.mixins.json"
+    "resettable.mixins.json",
+    {
+      "config": "resettable.client.mixins.json",
+      "environment": "client"
+    }
   ],
   "depends": {
-    "fabricloader": ">=0.18.4",
-    "minecraft": "~1.21.11",
-    "java": ">=21",
+    "fabricloader": ">=0.19.2",
+    "minecraft": "~26.1",
+    "java": ">=25",
     "fabric-api": "*",
     "fabric-language-kotlin": "*"
-  },
-  "suggests": {
-    "flamingo": "*"
   }
 }
