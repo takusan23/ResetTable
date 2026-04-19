@@ -18,7 +18,7 @@
 
 - Fabric API
   - https://www.curseforge.com/minecraft/mc-mods/fabric-api/files
-  - `0.145.1+26.1`以降
+  - `0.145.4+26.1.1`以降
 - Fabric Language Kotlin
   - Kotlinという言語で書かれたため、他のMODと違い必要になる。
   - https://www.curseforge.com/minecraft/mc-mods/fabric-language-kotlin/files
