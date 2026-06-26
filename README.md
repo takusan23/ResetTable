@@ -37,8 +37,8 @@ FabricとKotlinでできている。
 
 ### 必要なもの
 
-- Java 21 以降
-  - 私は `Eclipse Adoptium 21` 使います
+- Java 25 以降
+  - 私は `Eclipse Adoptium 25` 使います
 - IntelliJ IDEA
 
 ## 開発環境構築
